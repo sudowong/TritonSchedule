@@ -2,59 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TritonSchedule</title>
-    <link rel="stylesheet" href="index.css" />
+    <title>frontend</title>
   </head>
   <body>
-    <div class="app">
-      <header class="page-header">
-        <div class="brand">TritonSchedule</div>
-        <p class="muted">
-          A centralized class scheduling platform for UCSD students.
-        </p>
-      </header>
-
-      <main class="layout">
-        <section class="panel search-panel">
-          <div class="panel-head">
-            <div>
-              <h1>Find classes</h1>
-              <p class="muted">
-                Search by code, title, or professor then add to your plan.
-              </p>
-            </div>
-            <input
-              id="course-search"
-              type="search"
-              placeholder="Search e.g. CSE 100 or data structures"
-            />
-          </div>
-          <div id="course-list" class="course-list"></div>
-        </section>
-
-        <section class="panel added-panel">
-          <div class="panel-head">
-            <div>
-              <h2>Added classes</h2>
-              <p class="muted">Anything you add shows up in the schedule.</p>
-            </div>
-            <button id="clear-schedule" class="text-button">Clear all</button>
-          </div>
-          <ul id="selected-list" class="selected-list"></ul>
-        </section>
-
-        <section class="panel schedule-panel">
-          <div class="panel-head">
-            <div>
-              <h2>Weekly schedule</h2>
-              <p class="muted">A week visualization for the classes you add.</p>
-            </div>
-          </div>
-          <div id="schedule-grid" class="schedule-grid"></div>
-        </section>
-      </main>
-    </div>
-    <script src="index.js"></script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
