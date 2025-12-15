@@ -1,351 +1,423 @@
+import { useState } from 'react'
+import React from 'react'
 import './style.css'
 
-type Section = {
-  sectionId: string
+type ClassEntry = {
+  id: string
+  course: string
   section: string
   type: string
   days: string
   time: string
   building: string
   room: string
-  availSeats: number
-  totalSeats: number
-  waitlist: number
   instructor: string
-  action: 'PlanEnroll' | 'Waitlist'
+  available: string
 }
 
-const sections: Section[] = [
-  {
-    sectionId: '028898',
-    section: 'A00',
-    type: 'LE',
-    days: 'TuTh',
-    time: '8:00a-9:20a',
-    building: 'PETER',
-    room: '110',
-    availSeats: 0,
-    totalSeats: 50,
-    waitlist: 0,
-    instructor: 'Cao, Yingjun',
-    action: 'Waitlist',
-  },
-  {
-    sectionId: '028899',
-    section: 'A50',
-    type: 'LA',
-    days: 'Tu',
-    time: '10:00a-10:50a',
-    building: 'EBU3B',
-    room: 'B250',
-    availSeats: 0,
-    totalSeats: 50,
-    waitlist: 0,
-    instructor: 'Cao, Yingjun',
-    action: 'Waitlist',
-  },
-  {
-    sectionId: '028901',
-    section: 'A52',
-    type: 'LA',
-    days: 'Tu',
-    time: '12:00p-12:50p',
-    building: 'EBU3B',
-    room: 'B250',
-    availSeats: 11,
-    totalSeats: 50,
-    waitlist: 0,
-    instructor: 'Cao, Yingjun',
-    action: 'PlanEnroll',
-  },
-  {
-    sectionId: '028892',
-    section: 'A00',
-    type: 'LE',
-    days: 'TuTh',
-    time: '8:00a-9:20a',
-    building: 'PETER',
-    room: '110',
-    availSeats: 7,
-    totalSeats: 50,
-    waitlist: 0,
-    instructor: 'Cao, Yingjun',
-    action: 'PlanEnroll',
-  },
-  {
-    sectionId: '028894',
-    section: 'A52',
-    type: 'LA',
-    days: 'Tu',
-    time: '12:00p-12:50p',
-    building: 'EBU3B',
-    room: 'B250',
-    availSeats: 7,
-    totalSeats: 50,
-    waitlist: 0,
-    instructor: 'Cao, Yingjun',
-    action: 'PlanEnroll',
-  },
-  {
-    sectionId: '028896',
-    section: 'A55',
-    type: 'LA',
-    days: 'Tu',
-    time: '3:00p-3:50p',
-    building: 'EBU3B',
-    room: 'B250',
-    availSeats: 21,
-    totalSeats: 45,
-    waitlist: 0,
-    instructor: 'Cao, Yingjun',
-    action: 'PlanEnroll',
-  },
-]
+type ScheduledClass = ClassEntry & {
+  startHour: number
+  endHour: number
+  dayIndices: number[]
+}
 
-const discussionSections = [
+const initialClasses: ClassEntry[] = [
   {
-    sectionId: 'A01',
-    section: 'DI',
+    id: '1',
+    course: 'CSE 8A',
+    section: 'A00',
+    type: 'LE',
+    days: 'TuTh',
+    time: '8:00a-9:20a',
+    building: 'PETER',
+    room: '110',
+    instructor: 'Smith, John',
+    available: '15/50',
+  },
+  {
+    id: '2',
+    course: 'CSE 8A',
+    section: 'A01',
+    type: 'DI',
     days: 'M',
-    time: '8:00a-8:50a',
+    time: '10:00a-10:50a',
     building: 'SOLIS',
     room: '107',
-    instructor: 'Cao, Yingjun',
+    instructor: 'Smith, John',
+    available: '8/20',
   },
   {
-    sectionId: 'B00',
-    section: 'DI',
-    days: 'Th',
-    time: '8:00a-10:59a',
+    id: '3',
+    course: 'MATH 20A',
+    section: 'A00',
+    type: 'LE',
+    days: 'MWF',
+    time: '9:00a-9:50a',
     building: 'PETER',
-    room: '110',
-    instructor: '',
+    room: '105',
+    instructor: 'Johnson, Mary',
+    available: '22/100',
+  },
+  {
+    id: '4',
+    course: 'MATH 20A',
+    section: 'A01',
+    type: 'DI',
+    days: 'W',
+    time: '2:00p-2:50p',
+    building: 'PETER',
+    room: '105',
+    instructor: 'Johnson, Mary',
+    available: '5/30',
+  },
+  {
+    id: '5',
+    course: 'CSE 11',
+    section: 'A00',
+    type: 'LE',
+    days: 'TuTh',
+    time: '11:00a-12:20p',
+    building: 'PETER',
+    room: '120',
+    instructor: 'Williams, David',
+    available: '30/60',
+  },
+  {
+    id: '6',
+    course: 'CSE 11',
+    section: 'A01',
+    type: 'DI',
+    days: 'F',
+    time: '1:00p-1:50p',
+    building: 'PETER',
+    room: '120',
+    instructor: 'Williams, David',
+    available: '10/25',
   },
 ]
 
-const otherCourses = [
-  'CSE 11  Accel. Intro to Programming (4 units)',
-  'CSE 12  Basic Data Struct & OO Design (4 units)',
-  'CSE 20  Discrete Mathematics (4 units)',
-  'CSE 21  Math/Algorithm&Systems Analy (4 units)',
-  'CSE 25  Introduction to AI (4 units)',
-  'CSE 29  Sys Prog and Software Tools (4 units)',
-  'CSE 30  Computer Organization (4 units)',
-  'CSE 88  LearnSustainableWell-Being/CSE (1 unit)',
-  'CSE 89  Intro to CSE Seminar (2 units)',
+// Parse time string like "8:00a-9:20a" to start and end hours
+function parseTime(timeStr: string): { startHour: number; endHour: number } {
+  const [start, end] = timeStr.split('-')
+  
+  const parseTimePart = (time: string): number => {
+    const isPM = time.toLowerCase().includes('p')
+    const timeOnly = time.replace(/[ap]/gi, '').trim()
+    const [hours, minutes = '0'] = timeOnly.split(':')
+    let hour = parseInt(hours, 10)
+    const min = parseInt(minutes, 10)
+    
+    if (isPM && hour !== 12) hour += 12
+    if (!isPM && hour === 12) hour = 0
+    
+    return hour + min / 60
+  }
+  
+  return {
+    startHour: parseTimePart(start),
+    endHour: parseTimePart(end),
+  }
+}
+
+// Parse days string like "TuTh", "MWF", "M" to day indices (0=Mon, 1=Tue, etc.)
+function parseDays(daysStr: string): number[] {
+  const dayMap: Record<string, number> = {
+    M: 0,
+    Tu: 1,
+    T: 1, // Sometimes just T
+    W: 2,
+    Th: 3,
+    F: 4,
+  }
+  
+  const days: number[] = []
+  let i = 0
+  
+  while (i < daysStr.length) {
+    if (daysStr[i] === 'T') {
+      if (i + 1 < daysStr.length && daysStr[i + 1] === 'h') {
+        days.push(dayMap['Th'])
+        i += 2
+      } else if (i + 1 < daysStr.length && daysStr[i + 1] === 'u') {
+        days.push(dayMap['Tu'])
+        i += 2
+      } else {
+        days.push(dayMap['T'])
+        i += 1
+      }
+    } else {
+      const day = daysStr[i]
+      if (dayMap[day] !== undefined) {
+        days.push(dayMap[day])
+      }
+      i += 1
+    }
+  }
+  
+  return days.sort()
+}
+
+// Calculate grid position and span for a class block
+function calculateClassPosition(
+  startHour: number,
+  endHour: number,
+  dayIndex: number,
+): { gridRow: number; gridRowSpan: number; gridColumn: number } {
+  const startRow = Math.floor((startHour - 8) * 2) + 2 // +2 for header row
+  const endRow = Math.ceil((endHour - 8) * 2) + 2
+  const rowSpan = endRow - startRow
+  
+  return {
+    gridRow: startRow,
+    gridRowSpan: rowSpan,
+    gridColumn: dayIndex + 2, // +2 for time column
+  }
+}
+
+const timeSlots = [
+  '8:00 AM',
+  '9:00 AM',
+  '10:00 AM',
+  '11:00 AM',
+  '12:00 PM',
+  '1:00 PM',
+  '2:00 PM',
+  '3:00 PM',
+  '4:00 PM',
+  '5:00 PM',
+  '6:00 PM',
+  '7:00 PM',
+  '8:00 PM',
 ]
 
-const CourseNote = () => (
-  <div className="course-note">
-    <span className="note-label">Course Note:</span>
-    <span className="note-body">
-      Students who have credit for CSE 8B or CSE 11 may not receive credit for CSE 8A.
-      For more information about enrollment and waitlist see:
-      <a href="https://go.ucsd.edu/48sDB53" aria-label="waitlist information">
-        https://go.ucsd.edu/48sDB53
-      </a>
-    </span>
-  </div>
-)
+const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
-const SectionRow = ({ entry }: { entry: Section }) => (
-  <tr>
-    <td>{entry.sectionId}</td>
-    <td>{entry.section}</td>
-    <td>{entry.type}</td>
-    <td>{entry.days}</td>
-    <td>{entry.time}</td>
-    <td>{entry.building}</td>
-    <td>{entry.room}</td>
-    <td className="numeric">{entry.availSeats}</td>
-    <td className="numeric">{entry.totalSeats}</td>
-    <td className="numeric">{entry.waitlist}</td>
-    <td className="book-col">
-      <span className="book-icon" aria-hidden />
-    </td>
-    <td className="instructor">
-      <span className="instructor-name">{entry.instructor}</span>
-      <span className="email-link" aria-hidden />
-    </td>
-    <td className="actions">
-      {entry.action === 'PlanEnroll' ? (
-        <>
-          <button className="pill-button secondary">Plan</button>
-          <button className="pill-button primary">Enroll</button>
-        </>
-      ) : (
-        <button className="pill-button primary">Waitlist</button>
-      )}
-    </td>
-  </tr>
-)
+// Generate colors for different courses
+const courseColors: Record<string, string> = {}
+const colorPalette = [
+  '#4A90E2', // Blue
+  '#50C878', // Green
+  '#FF6B6B', // Red
+  '#FFA500', // Orange
+  '#9B59B6', // Purple
+  '#1ABC9C', // Teal
+  '#E74C3C', // Dark Red
+  '#3498DB', // Light Blue
+]
+
+let colorIndex = 0
+function getCourseColor(course: string): string {
+  if (!courseColors[course]) {
+    courseColors[course] = colorPalette[colorIndex % colorPalette.length]
+    colorIndex++
+  }
+  return courseColors[course]
+}
 
 function App() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [availableClasses, setAvailableClasses] = useState<ClassEntry[]>(initialClasses)
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClass[]>([])
+
+  const handleSearch = () => {
+    // Filter classes based on search query
+    if (!searchQuery.trim()) {
+      setAvailableClasses(initialClasses)
+      return
+    }
+    
+    const query = searchQuery.toLowerCase()
+    const filtered = initialClasses.filter(
+      (cls) =>
+        cls.course.toLowerCase().includes(query) ||
+        cls.instructor.toLowerCase().includes(query) ||
+        cls.building.toLowerCase().includes(query)
+    )
+    setAvailableClasses(filtered)
+  }
+
+  const handleAddClass = (classEntry: ClassEntry) => {
+    const { startHour, endHour } = parseTime(classEntry.time)
+    const dayIndices = parseDays(classEntry.days)
+    
+    // Check for conflicts
+    const hasConflict = scheduledClasses.some((scheduled) => {
+      const sameDay = scheduled.dayIndices.some((day) => dayIndices.includes(day))
+      if (!sameDay) return false
+      
+      return (
+        (startHour >= scheduled.startHour && startHour < scheduled.endHour) ||
+        (endHour > scheduled.startHour && endHour <= scheduled.endHour) ||
+        (startHour <= scheduled.startHour && endHour >= scheduled.endHour)
+      )
+    })
+    
+    if (hasConflict) {
+      alert(`Conflict detected! This class overlaps with an existing class.`)
+      return
+    }
+    
+    const scheduledClass: ScheduledClass = {
+      ...classEntry,
+      startHour,
+      endHour,
+      dayIndices,
+    }
+    
+    setScheduledClasses([...scheduledClasses, scheduledClass])
+  }
+
+  const handleRemoveClass = (id: string) => {
+    setScheduledClasses(scheduledClasses.filter((cls) => cls.id !== id))
+  }
+
   return (
-    <div className="app-shell">
-      <header className="banner">
-        <div className="banner-title">TritionSchedule</div>
+    <div className="app-container">
+      <header className="app-header">
+        <h1 className="app-title">TritonSchedule</h1>
       </header>
 
-      <main className="page">
-        <section className="results-card">
-          <div className="card-header">
-            <div className="title-block">
-              <div className="title">Search results and action</div>
-              <div className="breadcrumbs">
-                <span className="crumb">CSE</span>
-                <span className="crumb active">8A</span>
-                <span className="crumb text">Intro to Programming I (4 units)</span>
-              </div>
-            </div>
-            <div className="header-controls">
-              <button className="thin-button">Clear Filters</button>
-              <button className="thin-button emphasis">Add to Cart</button>
-            </div>
+      <main className="main-content">
+        {/* Search Section */}
+        <section className="search-section">
+          <div className="search-container">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search for classes (e.g., CSE 8A, MATH 20A)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button className="search-button" onClick={handleSearch}>
+              Search
+            </button>
           </div>
+        </section>
 
-          <div className="filters">
-            <div className="filter">
-              <label>Group</label>
-              <select>
-                <option>All</option>
-                <option>Lower Division</option>
-                <option>Upper Division</option>
-              </select>
-            </div>
-            <div className="filter">
-              <label>Subject</label>
-              <select>
-                <option>CSE</option>
-                <option>ECE</option>
-                <option>MATH</option>
-              </select>
-            </div>
-            <div className="filter">
-              <label>Course</label>
-              <input defaultValue="8A" />
-            </div>
-            <div className="filter">
-              <label>Meeting Type</label>
-              <select>
-                <option>Any</option>
-                <option>LE</option>
-                <option>LA</option>
-                <option>DI</option>
-              </select>
-            </div>
-            <div className="filter">
-              <label>Days</label>
-              <select>
-                <option>Any</option>
-                <option>MWF</option>
-                <option>TuTh</option>
-              </select>
-            </div>
-            <div className="filter">
-              <label>Time</label>
-              <select>
-                <option>Any</option>
-                <option>Morning</option>
-                <option>Afternoon</option>
-                <option>Evening</option>
-              </select>
-            </div>
-            <div className="filter">
-              <label>Building</label>
-              <input placeholder="e.g. PETER" />
-            </div>
-            <div className="filter">
-              <label>Room</label>
-              <input placeholder="110" />
-            </div>
-          </div>
-
-          <div className="info-row">
-            <CourseNote />
-            <div className="links">
-              <a href="#">Restricted by Class Level</a>
-              <a href="#">Catalog</a>
-              <a href="#">Resources</a>
-              <a href="#">Evaluations</a>
-            </div>
-          </div>
-
-          <div className="table-wrapper">
-            <table className="sections-table">
-              <thead>
-                <tr>
-                  <th>Section ID</th>
-                  <th>Section</th>
-                  <th>Meeting Type</th>
-                  <th>Days</th>
-                  <th>Time</th>
-                  <th>Building</th>
-                  <th>Room</th>
-                  <th>Avail Seats</th>
-                  <th>Total Seats</th>
-                  <th>Waitlist Count</th>
-                  <th>Book</th>
-                  <th>Instructor</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sections.map((section) => (
-                  <SectionRow entry={section} key={section.sectionId + section.section} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="footnote">
-            Note: The following is an additional required meeting type for the above courses.
-          </div>
-
-          <div className="table-wrapper compact">
-            <table className="sections-table">
-              <thead>
-                <tr>
-                  <th>Section</th>
-                  <th>Meeting Type</th>
-                  <th>Days</th>
-                  <th>Time</th>
-                  <th>Building</th>
-                  <th>Room</th>
-                  <th>Instructor</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {discussionSections.map((entry) => (
-                  <tr key={entry.sectionId + entry.time}>
-                    <td>{entry.sectionId}</td>
-                    <td>{entry.section}</td>
-                    <td>{entry.days}</td>
-                    <td>{entry.time}</td>
-                    <td>{entry.building}</td>
-                    <td>{entry.room}</td>
-                    <td className="instructor">{entry.instructor}</td>
-                    <td className="actions">
-                      <button className="pill-button secondary">Plan</button>
-                      <button className="pill-button primary">Enroll</button>
-                    </td>
+        {/* Class Results Section */}
+        <section className="results-section">
+          <div className="results-container">
+            <h2 className="results-title">Search Results</h2>
+            <div className="results-table-wrapper">
+              <table className="classes-table">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Section</th>
+                    <th>Type</th>
+                    <th>Days</th>
+                    <th>Time</th>
+                    <th>Building</th>
+                    <th>Room</th>
+                    <th>Instructor</th>
+                    <th>Available</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {availableClasses.map((classEntry) => {
+                    const isScheduled = scheduledClasses.some((sc) => sc.id === classEntry.id)
+                    return (
+                      <tr key={classEntry.id}>
+                        <td>{classEntry.course}</td>
+                        <td>{classEntry.section}</td>
+                        <td>{classEntry.type}</td>
+                        <td>{classEntry.days}</td>
+                        <td>{classEntry.time}</td>
+                        <td>{classEntry.building}</td>
+                        <td>{classEntry.room}</td>
+                        <td>{classEntry.instructor}</td>
+                        <td>{classEntry.available}</td>
+                        <td>
+                          {isScheduled ? (
+                            <button
+                              className="action-btn remove-btn"
+                              onClick={() => handleRemoveClass(classEntry.id)}
+                            >
+                              Remove
+                            </button>
+                          ) : (
+                            <button
+                              className="action-btn"
+                              onClick={() => handleAddClass(classEntry)}
+                            >
+                              Add
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
+        </section>
 
-          <div className="accordion">
-            <div className="accordion-header">Other CSE courses</div>
-            {otherCourses.map((course, index) => (
-              <div className="accordion-row" key={course}>
-                <span className="chevron" aria-hidden>
-                  {index === 2 ? '▸' : '▾'}
-                </span>
-                <span className={index === 2 ? 'highlighted-course' : ''}>{course}</span>
+        {/* Calendar Section */}
+        <section className="calendar-section">
+          <div className="calendar-container">
+            <h2 className="calendar-title">Weekly Schedule</h2>
+            <div className="calendar-wrapper">
+              <div className="calendar-grid">
+                {/* Time header (empty top-left cell) */}
+                <div className="time-header"></div>
+                
+                {/* Day headers */}
+                {weekdays.map((day) => (
+                  <div key={day} className="day-header">
+                    {day}
+                  </div>
+                ))}
+
+                {/* Time slots and day cells */}
+                {timeSlots.map((time) => (
+                  <React.Fragment key={time}>
+                    {/* Time slot */}
+                    <div className="time-slot">{time}</div>
+                    
+                    {/* Day cells for this time slot */}
+                    {weekdays.map((day) => (
+                      <div key={`${day}-${time}`} className="day-cell"></div>
+                    ))}
+                  </React.Fragment>
+                ))}
+
+                {/* Class blocks - rendered as direct children of calendar-grid */}
+                {scheduledClasses.map((cls) => {
+                  return cls.dayIndices.map((dayIndex) => {
+                    const pos = calculateClassPosition(
+                      cls.startHour,
+                      cls.endHour,
+                      dayIndex
+                    )
+                    return (
+                      <div
+                        key={`${cls.id}-${dayIndex}`}
+                        className="class-block"
+                        style={{
+                          gridRow: `${pos.gridRow} / span ${pos.gridRowSpan}`,
+                          gridColumn: pos.gridColumn,
+                          backgroundColor: getCourseColor(cls.course),
+                        }}
+                        title={`${cls.course} ${cls.section} - ${cls.time} - ${cls.building} ${cls.room}`}
+                      >
+                        <div className="class-block-content">
+                          <div className="class-block-title">
+                            {cls.course} {cls.section}
+                          </div>
+                          <div className="class-block-details">
+                            {cls.time} • {cls.building} {cls.room}
+                          </div>
+                          <div className="class-block-type">{cls.type}</div>
+                        </div>
+                      </div>
+                    )
+                  })
+                })}
               </div>
-            ))}
+            </div>
           </div>
         </section>
       </main>

@@ -5,6 +5,8 @@
       "node"
     ],
     "module": "nodenext",
+    "rootDir": "src",
+    "outDir": "dist",
     "lib": [
       "ESNext"
     ],

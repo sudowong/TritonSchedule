@@ -1,18 +1,14 @@
 import * as fs from "fs";
 import * as cheerio from "cheerio";
-// Normalizes raw cookies to create cookies string
-function extractCookies(resp) {
-    const rawCookies = resp.headers.getSetCookie?.() ?? [];
-    const sessionCookie = rawCookies.map((item) => item.split(";")[0]).join("; ");
-    return sessionCookie;
-}
-async function run() {
+import { extractCookies } from "./extractCookies.js";
+async function searchClass() {
     // Search page endpoint
     const searchUrl = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudent.htm";
     // Result page endpoint
     const resultUrl = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm";
     // Fetch session cookies
     const initResp = await fetch(searchUrl);
+    // Extract cookies
     const cookies = extractCookies(initResp);
     console.log(`Generating new session cookie...\nScraping contents...`);
     // Request Body
@@ -44,9 +40,6 @@ async function run() {
         },
         body,
     });
-    // Gets the HTML from request
-    // const html = await resp.text();
-    // const $ = cheerio.load(html);
     let page = 1;
     let hasMore = true;
     let pageContents = [];
@@ -82,14 +75,11 @@ async function run() {
             break;
         }
         pageContents.push(item);
-        // testing (delete later)
-        if (page == 1) {
-            break;
-        }
         page++;
     }
     // Writes to file
+    // TODO: Create the object store in mongo by class, and
+    // within these objects are the sections for this class
     await fs.promises.writeFile("text.txt", pageContents.join("\n\n"), "utf8");
     console.log(`Successfully written to file`);
 }
-run();
