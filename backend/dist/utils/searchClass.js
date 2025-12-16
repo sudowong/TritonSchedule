@@ -70,6 +70,12 @@ async function searchClass() {
         const html = await res.text();
         const $ = cheerio.load(html);
         const item = $(".tbrdr").html() ?? "";
+        console.log(item);
+        console.log("is this working?");
+        if (page == 1) {
+            hasMore = false;
+            break;
+        }
         if (item.length == 0) {
             hasMore = false;
             break;
@@ -77,9 +83,7 @@ async function searchClass() {
         pageContents.push(item);
         page++;
     }
-    // Writes to file
-    // TODO: Create the object store in mongo by class, and
-    // within these objects are the sections for this class
     await fs.promises.writeFile("text.txt", pageContents.join("\n\n"), "utf8");
     console.log(`Successfully written to file`);
 }
+searchClass();

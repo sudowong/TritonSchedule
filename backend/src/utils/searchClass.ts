@@ -2,6 +2,21 @@ import * as fs from "fs";
 import * as cheerio from "cheerio";
 import { extractCookies } from "./extractCookies.js";
 
+type Course = {
+  RestrictionCode: string;
+  CourseNumber: string;
+  SectionID: string;
+  MeetingType: string;
+  Section: string;
+  Days: string;
+  Time: string;
+  Location: string;
+  Instructor: string;
+  AvaliableSeats: string;
+  Limit: string;
+  searchText: string;
+};
+
 async function searchClass() {
   // Search page endpoint
   const searchUrl =
@@ -54,7 +69,7 @@ async function searchClass() {
 
   let page: number = 1;
   let hasMore: boolean = true;
-  let pageContents: string[] = [];
+  let results: Course[] = [];
 
   const url =
     "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm";
@@ -90,22 +105,61 @@ async function searchClass() {
     const html = await res.text();
 
     const $ = cheerio.load(html);
-    const item = $(".tbrdr").html() ?? "";
+    const classes = $(".sectxt") ?? "";
 
-    if (item.length == 0) {
+    // type Course = {
+    //   RestrictionCode: string;
+    //   CourseNumber: string;
+    //   SectionID: string;
+    //   MeetingType: string;
+    //   Section: string;
+    //   Days: string;
+    //   Time: string;
+    //   Location: string;
+    //   Instructor: string;
+    //   AvaliableSeats: string;
+    //   Limit: string;
+    //   searchText: string;
+    // };
+
+    // TODO: Need to find a way to store discussion sections for each class
+    // in the DB for later retrieve for generating scheduling options via
+    // a algorithm
+
+    // Skip eq(8)
+    classes.each((_, el) => {
+      const rows = $(el).children("td");
+
+      // Need to figure out a way to get the class name and course number
+      const searchText: string =
+        rows.eq(1).text().trim() + rows.eq(2).text().trim();
+
+      results.push({
+        RestrictionCode: rows.eq(0).text().trim(),
+        CourseNumber: rows.eq(1).text().trim(),
+        SectionID: rows.eq(2).text().trim(),
+        MeetingType: rows.eq(3).text().trim(),
+        Section: rows.eq(4).text().trim(),
+        Days: rows.eq(5).text().trim(),
+        Time: rows.eq(6).text().trim(),
+        Location: rows.eq(7).text().trim(),
+        Instructor: rows.eq(9).text().trim(),
+        AvaliableSeats: rows.eq(10).text().trim(),
+        Limit: rows.eq(11).text().trim(),
+        searchText: "placeholder",
+      });
+    });
+
+    if (classes.length == 0) {
       hasMore = false;
       break;
     }
 
-    pageContents.push(item);
-
     page++;
   }
 
-  // Writes to file
-  // TODO: Create the object store in mongo by class, and
-  // within these objects are the sections for this class
-  await fs.promises.writeFile("text.txt", pageContents.join("\n\n"), "utf8");
-
-  console.log(`Successfully written to file`);
+  console.log("Successfully scraped classes");
 }
+
+// Delete later; strictly for testing purposes
+searchClass();
