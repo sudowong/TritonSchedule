@@ -42,7 +42,7 @@ async function searchClass() {
     });
     let page = 1;
     let hasMore = true;
-    let pageContents = [];
+    let results = [];
     const url = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm";
     while (hasMore) {
         const url = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm";
@@ -69,21 +69,77 @@ async function searchClass() {
         });
         const html = await res.text();
         const $ = cheerio.load(html);
-        const item = $(".tbrdr").html() ?? "";
-        console.log(item);
-        console.log("is this working?");
+        const classes = $("tr") ?? "";
+        // Variable for keep track of the current class and it's sections
+        // let current: Course | null = null;
+        // Scraping call name + sections logic
+        classes.each((_, el) => {
+            const row = $(el);
+            if (row.find("td.crsheader").length > 0) {
+                let sections = [];
+                let index = 0;
+                const title = row.children();
+                const classCode = $(title).eq(1).text().replace(/\s+/g, " ").trim();
+                const className = $(title)
+                    .eq(2)
+                    .find(".boldtxt")
+                    .text()
+                    .replace(/\s+/g, " ")
+                    .trim();
+                if (className.length > 0 && classCode.length > 0) {
+                    sections.push(classCode);
+                    sections.push(className);
+                }
+                console.log(sections);
+            }
+            // Place the logic for creating the sections under each header
+            // Ensure that it avoids a edge case of no sections under header
+            // by searching by .sectxt
+        });
+        // type Course =  {
+        //   RestrictionCode: string;
+        //   CourseNumber: string;
+        //   SectionID: string;
+        //   MeetingType: string;
+        //   Section: string;
+        //   Days: string;
+        //   Time: string;
+        //   Location: string;
+        //   Instructor: string;
+        //   AvaliableSeats: string;
+        //   Limit: string;
+        //   searchText: string;
+        // };
+        classes.each((_, el) => {
+            const rows = $(el).children("td");
+            // Need to figure out a way to get the class name and course number
+            const searchText = rows.eq(1).text().trim() + rows.eq(2).text().trim();
+            results.push({
+                RestrictionCode: rows.eq(0).text().trim(),
+                CourseNumber: rows.eq(1).text().trim(),
+                SectionID: rows.eq(2).text().trim(),
+                MeetingType: rows.eq(3).text().trim(),
+                Section: rows.eq(4).text().trim(),
+                Days: rows.eq(5).text().trim(),
+                Time: rows.eq(6).text().trim(),
+                Location: rows.eq(7).text().trim(),
+                Instructor: rows.eq(9).text().trim(),
+                AvaliableSeats: rows.eq(10).text().trim(),
+                Limit: rows.eq(11).text().trim(),
+                searchText: "placeholder",
+            });
+        });
+        if (classes.length == 0) {
+            hasMore = false;
+            break;
+        }
         if (page == 1) {
             hasMore = false;
             break;
         }
-        if (item.length == 0) {
-            hasMore = false;
-            break;
-        }
-        pageContents.push(item);
         page++;
     }
-    await fs.promises.writeFile("text.txt", pageContents.join("\n\n"), "utf8");
-    console.log(`Successfully written to file`);
+    console.log("Successfully scraped classes");
 }
+// Delete later; strictly for testing purposes
 searchClass();

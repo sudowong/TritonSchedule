@@ -105,9 +105,39 @@ async function searchClass() {
     const html = await res.text();
 
     const $ = cheerio.load(html);
-    const classes = $(".sectxt") ?? "";
+    const classes = $("tr") ?? "";
 
-    // type Course = {
+    // Variable for keep track of the current class and it's sections
+    // let current: Course | null = null;
+
+    // Scraping call name + sections logic
+    classes.each((_, el) => {
+      const row = $(el);
+
+      if (row.find("td.crsheader").length > 0) {
+        let sections: string[] = [];
+        let index: number = 0;
+        const title = row.children();
+        const classCode = $(title).eq(1).text().replace(/\s+/g, " ").trim();
+        const className = $(title)
+          .eq(2)
+          .find(".boldtxt")
+          .text()
+          .replace(/\s+/g, " ")
+          .trim();
+        if (className.length > 0 && classCode.length > 0) {
+          sections.push(classCode);
+          sections.push(className);
+        }
+        console.log(sections);
+      }
+
+      // Place the logic for creating the sections under each header
+      // Ensure that it avoids a edge case of no sections under header
+      // by searching by .sectxt
+    });
+
+    // type Course =  {
     //   RestrictionCode: string;
     //   CourseNumber: string;
     //   SectionID: string;
@@ -122,11 +152,6 @@ async function searchClass() {
     //   searchText: string;
     // };
 
-    // TODO: Need to find a way to store discussion sections for each class
-    // in the DB for later retrieve for generating scheduling options via
-    // a algorithm
-
-    // Skip eq(8)
     classes.each((_, el) => {
       const rows = $(el).children("td");
 
@@ -151,6 +176,11 @@ async function searchClass() {
     });
 
     if (classes.length == 0) {
+      hasMore = false;
+      break;
+    }
+
+    if (page == 1) {
       hasMore = false;
       break;
     }
