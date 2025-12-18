@@ -1,27 +1,9 @@
 import * as cheerio from "cheerio";
 import { extractCookies } from "./extractCookies.js";
+import type { Class } from "../models/Class.js";
+import type { Course } from "../models/Course.js";
 
-type Class = {
-  name: string;
-  sections: Course[];
-}
-
-type Course =  {
-  RestrictionCode: string;
-  CourseNumber: string;
-  SectionID: string;
-  MeetingType: string;
-  Section: string;
-  Days: string;
-  Time: string;
-  Location: string;
-  Instructor: string;
-  AvaliableSeats: string;
-  Limit: string;
-  searchText: string;
-};
-
-async function searchClass() {
+export async function searchClass(search: string, term: string) {
   // Search page endpoint
   const searchUrl =
     "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudent.htm";
@@ -40,8 +22,8 @@ async function searchClass() {
 
   // Request Body
   const body = new URLSearchParams({
-    selectedTerm: "WI26",
-    courses: "math",
+    selectedTerm: term,
+    courses: search,
     tabNum: "tabs-crs",
   });
 
@@ -188,5 +170,6 @@ async function searchClass() {
   }
 
   console.log("Successfully scraped classes");
-}
+  return scrapedClasses;
 
+}

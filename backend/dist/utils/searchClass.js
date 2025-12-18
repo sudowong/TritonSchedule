@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { extractCookies } from "./extractCookies.js";
-async function searchClass() {
+export async function searchClass(search, term) {
     // Search page endpoint
     const searchUrl = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudent.htm";
     // Result page endpoint
@@ -12,8 +12,8 @@ async function searchClass() {
     console.log(`Generating new session cookie...\nScraping contents...`);
     // Request Body
     const body = new URLSearchParams({
-        selectedTerm: "WI26",
-        courses: "math",
+        selectedTerm: term,
+        courses: search,
         tabNum: "tabs-crs",
     });
     // Request
@@ -134,4 +134,5 @@ async function searchClass() {
         page++;
     }
     console.log("Successfully scraped classes");
+    return scrapedClasses;
 }
