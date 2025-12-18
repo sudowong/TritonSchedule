@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as cheerio from "cheerio";
 import { extractCookies } from "./extractCookies.js";
 async function searchClass() {
@@ -44,6 +43,8 @@ async function searchClass() {
     let hasMore = true;
     let results = [];
     const url = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm";
+    let scrapedClasses = [];
+    let currentCourse = null;
     while (hasMore) {
         const url = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm";
         const res = await fetch(`${url}?page=${page}`, {
@@ -70,14 +71,15 @@ async function searchClass() {
         const html = await res.text();
         const $ = cheerio.load(html);
         const classes = $("tr") ?? "";
-        // Variable for keep track of the current class and it's sections
-        // let current: Course | null = null;
-        // Scraping call name + sections logic
+        // Scrape the classes and sections
         classes.each((_, el) => {
             const row = $(el);
+            // Check if the row is a header
             if (row.find("td.crsheader").length > 0) {
-                let sections = [];
-                let index = 0;
+                // If the current course is not null, add it to the scraped classes
+                if (currentCourse != null) {
+                    scrapedClasses.push(currentCourse);
+                }
                 const title = row.children();
                 const classCode = $(title).eq(1).text().replace(/\s+/g, " ").trim();
                 const className = $(title)
@@ -86,54 +88,46 @@ async function searchClass() {
                     .text()
                     .replace(/\s+/g, " ")
                     .trim();
-                if (className.length > 0 && classCode.length > 0) {
-                    sections.push(classCode);
-                    sections.push(className);
+                const combinedTitle = `${classCode} ${className}`;
+                // Create a new course
+                if (className.length > 0) {
+                    currentCourse = {
+                        name: combinedTitle,
+                        sections: [],
+                    };
                 }
-                console.log(sections);
+                else {
+                    currentCourse = null;
+                }
             }
-            // Place the logic for creating the sections under each header
-            // Ensure that it avoids a edge case of no sections under header
-            // by searching by .sectxt
+            if (row.find(".brdr").length > 0) {
+                // Only push if currentCourse exists
+                if (currentCourse !== null) {
+                    const sectionElements = row.children("td");
+                    const course = {
+                        RestrictionCode: sectionElements.eq(0).text().trim(),
+                        CourseNumber: sectionElements.eq(1).text().trim(),
+                        SectionID: sectionElements.eq(2).text().trim(),
+                        MeetingType: sectionElements.eq(3).text().trim(),
+                        Section: sectionElements.eq(4).text().trim(),
+                        Days: sectionElements.eq(5).text().trim(),
+                        Time: sectionElements.eq(6).text().trim(),
+                        Location: sectionElements.eq(7).text().trim(),
+                        Instructor: sectionElements.eq(9).text().trim(),
+                        AvaliableSeats: sectionElements.eq(10).text().trim(),
+                        Limit: sectionElements.eq(11).text().trim(),
+                        searchText: "placeholder",
+                    };
+                    currentCourse.sections.push(course);
+                }
+            }
         });
-        // type Course =  {
-        //   RestrictionCode: string;
-        //   CourseNumber: string;
-        //   SectionID: string;
-        //   MeetingType: string;
-        //   Section: string;
-        //   Days: string;
-        //   Time: string;
-        //   Location: string;
-        //   Instructor: string;
-        //   AvaliableSeats: string;
-        //   Limit: string;
-        //   searchText: string;
-        // };
-        classes.each((_, el) => {
-            const rows = $(el).children("td");
-            // Need to figure out a way to get the class name and course number
-            const searchText = rows.eq(1).text().trim() + rows.eq(2).text().trim();
-            results.push({
-                RestrictionCode: rows.eq(0).text().trim(),
-                CourseNumber: rows.eq(1).text().trim(),
-                SectionID: rows.eq(2).text().trim(),
-                MeetingType: rows.eq(3).text().trim(),
-                Section: rows.eq(4).text().trim(),
-                Days: rows.eq(5).text().trim(),
-                Time: rows.eq(6).text().trim(),
-                Location: rows.eq(7).text().trim(),
-                Instructor: rows.eq(9).text().trim(),
-                AvaliableSeats: rows.eq(10).text().trim(),
-                Limit: rows.eq(11).text().trim(),
-                searchText: "placeholder",
-            });
-        });
-        if (classes.length == 0) {
-            hasMore = false;
-            break;
+        // Push the last course if it exists
+        if (currentCourse !== null) {
+            scrapedClasses.push(currentCourse);
+            currentCourse = null; // Reset for next page iteration
         }
-        if (page == 1) {
+        if (classes.length == 0) {
             hasMore = false;
             break;
         }
@@ -141,5 +135,3 @@ async function searchClass() {
     }
     console.log("Successfully scraped classes");
 }
-// Delete later; strictly for testing purposes
-searchClass();
