@@ -488,6 +488,149 @@ a {
   padding: 16px;
 }
 
+.results-hierarchy-wrapper {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.class-group {
+  border: 1px solid #c6cbd4;
+  border-radius: 6px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.class-header {
+  padding: 12px 16px;
+  background: linear-gradient(#e8edf3, #d8dfe8);
+  border-bottom: 1px solid #c6cbd4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.class-header:hover {
+  background: linear-gradient(#d8dfe8, #c8d1dc);
+}
+
+.class-chevron {
+  width: 16px;
+  font-size: 14px;
+  color: #5c6470;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.class-content {
+  background: #ffffff;
+}
+
+.class-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1f2f44;
+}
+
+.class-teacher {
+  font-size: 14px;
+  color: #5c6470;
+  font-style: italic;
+}
+
+.class-section-group {
+  border-bottom: 1px solid #e3e7ee;
+}
+
+.class-section-group:last-child {
+  border-bottom: none;
+}
+
+.section-header {
+  padding: 10px 16px;
+  background: #f7f9fb;
+  border-bottom: 1px solid #e3e7ee;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.section-header:hover {
+  background: #eef2f7;
+}
+
+.section-chevron {
+  width: 16px;
+  font-size: 12px;
+  color: #5c6470;
+  display: inline-block;
+}
+
+.section-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2f3d50;
+  flex: 1;
+}
+
+.section-count {
+  font-size: 12px;
+  color: #7b8ea8;
+}
+
+.section-content {
+  background: #ffffff;
+  padding: 8px 0;
+}
+
+.section-item {
+  padding: 8px 16px 8px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f2f5;
+  transition: background-color 0.2s;
+}
+
+.section-item:last-child {
+  border-bottom: none;
+}
+
+.section-item:hover {
+  background: #f7f9fb;
+}
+
+.section-item.all-sections {
+  font-weight: 600;
+  color: #0f66c3;
+  background: #f1f6ff;
+  padding-left: 16px;
+}
+
+.section-label {
+  font-size: 13px;
+}
+
+.section-details {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  font-size: 13px;
+  color: #304154;
+}
+
+.section-details span {
+  min-width: 80px;
+}
+
 .classes-table {
   width: 100%;
   border-collapse: collapse;

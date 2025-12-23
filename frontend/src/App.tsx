@@ -21,81 +21,6 @@ type ScheduledClass = ClassEntry & {
   dayIndices: number[]
 }
 
-const initialClasses: ClassEntry[] = [
-  {
-    id: '1',
-    course: 'CSE 8A',
-    section: 'A00',
-    type: 'LE',
-    days: 'TuTh',
-    time: '8:00a-9:20a',
-    building: 'PETER',
-    room: '110',
-    instructor: 'Smith, John',
-    available: '15/50',
-  },
-  {
-    id: '2',
-    course: 'CSE 8A',
-    section: 'A01',
-    type: 'DI',
-    days: 'M',
-    time: '10:00a-10:50a',
-    building: 'SOLIS',
-    room: '107',
-    instructor: 'Smith, John',
-    available: '8/20',
-  },
-  {
-    id: '3',
-    course: 'MATH 20A',
-    section: 'A00',
-    type: 'LE',
-    days: 'MWF',
-    time: '9:00a-9:50a',
-    building: 'PETER',
-    room: '105',
-    instructor: 'Johnson, Mary',
-    available: '22/100',
-  },
-  {
-    id: '4',
-    course: 'MATH 20A',
-    section: 'A01',
-    type: 'DI',
-    days: 'W',
-    time: '2:00p-2:50p',
-    building: 'PETER',
-    room: '105',
-    instructor: 'Johnson, Mary',
-    available: '5/30',
-  },
-  {
-    id: '5',
-    course: 'CSE 11',
-    section: 'A00',
-    type: 'LE',
-    days: 'TuTh',
-    time: '11:00a-12:20p',
-    building: 'PETER',
-    room: '120',
-    instructor: 'Williams, David',
-    available: '30/60',
-  },
-  {
-    id: '6',
-    course: 'CSE 11',
-    section: 'A01',
-    type: 'DI',
-    days: 'F',
-    time: '1:00p-1:50p',
-    building: 'PETER',
-    room: '120',
-    instructor: 'Williams, David',
-    available: '10/25',
-  },
-]
-
 // Parse time string like "8:00a-9:20a" to start and end hours
 function parseTime(timeStr: string): { startHour: number; endHour: number } {
   const [start, end] = timeStr.split('-')
@@ -241,102 +166,93 @@ function getCourseColor(course: string): string {
 }
 
 // Type definitions for API response
+type Course = {
+  RestrictionCode: string
+  CourseNumber: string
+  SectionID: string
+  MeetingType: string
+  Section: string
+  Days: string
+  Time: string
+  Location: string
+  AvaliableSeats: string
+  Limit: string
+}
+
 type ApiClass = {
   _id?: string
   name: string
-  sections: {
-    RestrictionCode: string
-    CourseNumber: string
-    SectionID: string
-    MeetingType: string
-    Section: string
-    Days: string
-    Time: string
-    Location: string
-    Instructor: string
-    AvaliableSeats: string
-    Limit: string
-    searchText: string
-  }[]
+  teacher: string
+  lectures: Course[]
+  discussions: Course[]
+  midterms: Course[]
+  final: Course | null
 }
 
-// Transform API response (Class[]) to ClassEntry[]
-function transformApiDataToClassEntries(classes: ApiClass[]): ClassEntry[] {
-  const classEntries: ClassEntry[] = []
-  let entryId = 1
+// Transform Course to ClassEntry
+function transformCourseToClassEntry(
+  course: Course,
+  classItem: ApiClass,
+  classIndex: number,
+  sectionIndex: number,
+  type: string
+): ClassEntry {
+  // Parse location (format: "BUILDING ROOM" or just "TBA")
+  const location = course.Location?.trim() || 'TBA'
+  const locationParts = location.split(/\s+/)
+  const building = locationParts.length > 0 && locationParts[0] !== '' ? locationParts[0] : 'TBA'
+  const room = locationParts.length > 1 ? locationParts.slice(1).join(' ') : 'TBA'
 
-  if (!Array.isArray(classes)) {
-    console.error('transformApiDataToClassEntries: Expected array but got:', typeof classes, classes)
-    return []
+  // Extract course code from CourseNumber (e.g., "CSE 11" or "MATH 20A")
+  const courseCode = course.CourseNumber || classItem.name.split(' ').slice(0, 2).join(' ')
+
+  return {
+    id: `${classItem._id || classIndex}-${type}-${course.SectionID || sectionIndex}`,
+    course: courseCode || 'Unknown',
+    section: course.Section || course.SectionID || 'Unknown',
+    type: course.MeetingType || type,
+    days: course.Days || 'TBA',
+    time: course.Time || 'TBA',
+    building: building,
+    room: room,
+    instructor: classItem.teacher || 'TBA',
+    available: `${course.AvaliableSeats || '0'}/${course.Limit || '0'}`
   }
-
-  classes.forEach((classItem, classIndex) => {
-    // Check if classItem has sections
-    if (!classItem.sections || !Array.isArray(classItem.sections)) {
-      console.warn(`Class at index ${classIndex} has no sections array:`, classItem)
-      return
-    }
-
-    if (classItem.sections.length === 0) {
-      console.warn(`Class at index ${classIndex} has empty sections array:`, classItem.name)
-    }
-
-    classItem.sections.forEach((section, sectionIndex) => {
-      try {
-        // Parse location (format: "BUILDING ROOM" or just "TBA")
-        const location = section.Location?.trim() || 'TBA'
-        const locationParts = location.split(/\s+/)
-        const building = locationParts.length > 0 && locationParts[0] !== '' ? locationParts[0] : 'TBA'
-        const room = locationParts.length > 1 ? locationParts.slice(1).join(' ') : 'TBA'
-
-        // Extract course code from CourseNumber (e.g., "CSE 11" or "MATH 20A")
-        const course = section.CourseNumber || classItem.name.split(' ').slice(0, 2).join(' ')
-
-        classEntries.push({
-          id: `${classItem._id || classIndex}-${section.SectionID || sectionIndex}`,
-          course: course || 'Unknown',
-          section: section.Section || section.SectionID || 'Unknown',
-          type: section.MeetingType || 'Unknown',
-          days: section.Days || 'TBA',
-          time: section.Time || 'TBA',
-          building: building,
-          room: room,
-          instructor: section.Instructor || 'TBA',
-          available: `${section.AvaliableSeats || '0'}/${section.Limit || '0'}`
-        })
-        entryId++
-      } catch (err) {
-        console.error(`Error transforming section ${sectionIndex} of class ${classIndex}:`, err, section)
-      }
-    })
-  })
-
-  return classEntries
 }
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [availableClasses, setAvailableClasses] = useState<ClassEntry[]>(initialClasses)
+  const [apiClasses, setApiClasses] = useState<ApiClass[]>([])
   const [scheduledClasses, setScheduledClasses] = useState<ScheduledClass[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+  const [loadingClasses, setLoadingClasses] = useState<Set<string>>(new Set())
+  const [classDetails, setClassDetails] = useState<Map<string, ApiClass>>(new Map())
 
   const handleSearch = async () => {
-    // If search is empty, reset to initial classes
+    // Always call the API endpoint when search button is clicked
     if (!searchQuery.trim()) {
-      setAvailableClasses(initialClasses)
-      setError(null)
+      setApiClasses([])
+      setError('Please enter a search term')
       return
     }
 
     setIsLoading(true)
     setError(null)
+    // Clear previous results immediately
+    setApiClasses([])
+    // Clear expanded sections when starting new search
+    setExpandedSections(new Set())
 
     try {
-      const url = `http://localhost:3000/api/courses?search=${encodeURIComponent(searchQuery)}&term=WI26`
+      const url = `http://localhost:3000/api/courses?search=${encodeURIComponent(searchQuery.trim())}&term=WI26`
       console.log('Fetching from URL:', url)
       
-      const response = await fetch(url)
+      const response = await fetch(url).catch((fetchError) => {
+        console.error('Network error:', fetchError)
+        throw new Error('Failed to connect to server. Make sure the backend is running on http://localhost:3000')
+      })
 
       console.log('Response status:', response.status, response.statusText)
 
@@ -356,23 +272,20 @@ function App() {
         throw new Error('Invalid response format from server')
       }
       
-      // Transform API response to ClassEntry format
-      const transformedClasses = transformApiDataToClassEntries(data)
-      console.log('Transformed classes:', transformedClasses)
-      console.log('Number of transformed entries:', transformedClasses.length)
-      
-      setAvailableClasses(transformedClasses)
+      // Always update with the API response, even if empty
+      setApiClasses(data)
 
-      if (transformedClasses.length === 0) {
+      if (data.length === 0) {
         setError('No courses found. Try a different search term.')
       } else {
         setError(null) // Clear any previous errors
+        console.log('Successfully rendered', data.length, 'classes')
       }
     } catch (err) {
       console.error('Error fetching courses:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to search courses. Please try again.'
       setError(errorMessage)
-      setAvailableClasses([])
+      setApiClasses([])
     } finally {
       setIsLoading(false)
     }
@@ -413,6 +326,100 @@ function App() {
     setScheduledClasses(scheduledClasses.filter((cls) => cls.id !== id))
   }
 
+  const fetchClassDetails = async (classId: string) => {
+    // Check if we already have the details
+    if (classDetails.has(classId)) {
+      return classDetails.get(classId)!
+    }
+
+    // Check if already loading
+    if (loadingClasses.has(classId)) {
+      return null
+    }
+
+    setLoadingClasses(prev => new Set(prev).add(classId))
+
+    try {
+      const url = `http://localhost:3000/api/courses/${classId}`
+      console.log('Fetching class details from URL:', url)
+      
+      const response = await fetch(url).catch((fetchError) => {
+        console.error('Network error:', fetchError)
+        throw new Error('Failed to connect to server')
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('Class details fetched:', data)
+      
+      // Store the fetched class details
+      setClassDetails(prev => {
+        const newMap = new Map(prev)
+        newMap.set(classId, data)
+        return newMap
+      })
+
+      return data
+    } catch (err) {
+      console.error('Error fetching class details:', err)
+      return null
+    } finally {
+      setLoadingClasses(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(classId)
+        return newSet
+      })
+    }
+  }
+
+  const toggleClass = async (classId: string) => {
+    const key = `${classId}-class`
+    const isExpanding = !expandedSections.has(key)
+    
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(key)) {
+        // Collapsing - remove class and all its sections
+        newSet.delete(key)
+        newSet.delete(`${classId}-lectures`)
+        newSet.delete(`${classId}-discussions`)
+      } else {
+        // Expanding - add class key and auto-expand all sections
+        newSet.add(key)
+        newSet.add(`${classId}-lectures`)
+        newSet.add(`${classId}-discussions`)
+      }
+      return newSet
+    })
+
+    // Fetch class details from DB when expanding
+    if (isExpanding) {
+      await fetchClassDetails(classId)
+    }
+  }
+
+  const toggleSection = (classId: string, sectionType: string) => {
+    const key = `${classId}-${sectionType}`
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(key)) {
+        newSet.delete(key)
+      } else {
+        newSet.add(key)
+      }
+      return newSet
+    })
+  }
+
+  const handleAddCourse = (course: Course, classItem: ApiClass, type: string) => {
+    const classEntry = transformCourseToClassEntry(course, classItem, 0, 0, type)
+    handleAddClass(classEntry)
+  }
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -443,61 +450,184 @@ function App() {
             <h2 className="results-title">Search Results</h2>
             {isLoading && <p style={{ padding: '1rem', textAlign: 'center' }}>Loading...</p>}
             {error && <p style={{ padding: '1rem', color: 'red', textAlign: 'center' }}>{error}</p>}
-            {!isLoading && !error && availableClasses.length === 0 && (
+            {!isLoading && !error && apiClasses.length === 0 && (
               <p style={{ padding: '1rem', textAlign: 'center' }}>No courses found. Try searching for a course.</p>
             )}
-            <div className="results-table-wrapper">
-              <table className="classes-table">
-                <thead>
-                  <tr>
-                    <th>Course</th>
-                    <th>Section</th>
-                    <th>Type</th>
-                    <th>Days</th>
-                    <th>Time</th>
-                    <th>Building</th>
-                    <th>Room</th>
-                    <th>Instructor</th>
-                    <th>Available</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableClasses.map((classEntry) => {
-                    const isScheduled = scheduledClasses.some((sc) => sc.id === classEntry.id)
-                    return (
-                      <tr key={classEntry.id}>
-                        <td>{classEntry.course}</td>
-                        <td>{classEntry.section}</td>
-                        <td>{classEntry.type}</td>
-                        <td>{classEntry.days}</td>
-                        <td>{classEntry.time}</td>
-                        <td>{classEntry.building}</td>
-                        <td>{classEntry.room}</td>
-                        <td>{classEntry.instructor}</td>
-                        <td>{classEntry.available}</td>
-                        <td>
-                          {isScheduled ? (
-                            <button
-                              className="action-btn remove-btn"
-                              onClick={() => handleRemoveClass(classEntry.id)}
-                            >
-                              Remove
-                            </button>
-                          ) : (
-                            <button
-                              className="action-btn"
-                              onClick={() => handleAddClass(classEntry)}
-                            >
-                              Add
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div className="results-hierarchy-wrapper">
+              {apiClasses.map((classItem, classIndex) => {
+                const classId = classItem._id || `class-${classIndex}`
+                const classKey = `${classId}-class`
+                const lecturesKey = `${classId}-lectures`
+                const discussionsKey = `${classId}-discussions`
+                const classExpanded = expandedSections.has(classKey)
+                const lecturesExpanded = expandedSections.has(lecturesKey)
+                const discussionsExpanded = expandedSections.has(discussionsKey)
+                
+                // Use fetched class details if available, otherwise use the original classItem
+                const displayClass = classDetails.get(classId) || classItem
+                const isLoadingClass = loadingClasses.has(classId)
+
+                return (
+                  <div key={classId} className="class-group">
+                    <div 
+                      className="class-header"
+                      onClick={() => toggleClass(classId)}
+                    >
+                      <span className="class-chevron">{classExpanded ? '▼' : '▶'}</span>
+                      <span className="class-name">{classItem.name}</span>
+                      {classItem.teacher && (
+                        <span className="class-teacher">by {classItem.teacher}</span>
+                      )}
+                    </div>
+                    {classExpanded && (
+                      <div className="class-content">
+                        {isLoadingClass && (
+                          <div style={{ padding: '1rem', textAlign: 'center', color: '#5c6470' }}>
+                            Loading class details...
+                          </div>
+                        )}
+                        {/* Class Sections (Lectures) */}
+                        {displayClass.lectures && displayClass.lectures.length > 0 && (
+                      <div className="class-section-group">
+                        <div 
+                          className="section-header"
+                          onClick={() => toggleSection(classId, 'lectures')}
+                        >
+                          <span className="section-chevron">{lecturesExpanded ? '▼' : '▶'}</span>
+                          <span className="section-title">Class Sections</span>
+                          <span className="section-count">({displayClass.lectures.length})</span>
+                        </div>
+                        {lecturesExpanded && (
+                          <div className="section-content">
+                            <div className="section-item all-sections">
+                              <span className="section-label">ALL SECTIONS</span>
+                            </div>
+                            {displayClass.lectures.map((lecture, idx) => {
+                              const entry = transformCourseToClassEntry(lecture, displayClass, classIndex, idx, 'lecture')
+                              const isScheduled = scheduledClasses.some((sc) => sc.id === entry.id)
+                              return (
+                                <div key={idx} className="section-item">
+                                  <div className="section-details">
+                                    <span>{lecture.Section || lecture.SectionID}</span>
+                                    <span>{lecture.Days} {lecture.Time}</span>
+                                    <span>{lecture.Location}</span>
+                                    <span>{lecture.AvaliableSeats}/{lecture.Limit}</span>
+                                  </div>
+                                  {isScheduled ? (
+                                    <button
+                                      className="action-btn remove-btn"
+                                      onClick={() => handleRemoveClass(entry.id)}
+                                    >
+                                      Remove
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="action-btn"
+                                      onClick={() => handleAddCourse(lecture, displayClass, 'lecture')}
+                                    >
+                                      Add
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Discussions */}
+                    {classItem.discussions && classItem.discussions.length > 0 && (
+                      <div className="class-section-group">
+                        <div 
+                          className="section-header"
+                          onClick={() => toggleSection(classId, 'discussions')}
+                        >
+                          <span className="section-chevron">{discussionsExpanded ? '▼' : '▶'}</span>
+                          <span className="section-title">Discussions</span>
+                          <span className="section-count">({displayClass.discussions.length})</span>
+                        </div>
+                        {discussionsExpanded && (
+                          <div className="section-content">
+                            <div className="section-item all-sections">
+                              <span className="section-label">ALL DISCUSSIONS</span>
+                            </div>
+                            {displayClass.discussions.map((discussion, idx) => {
+                              const entry = transformCourseToClassEntry(discussion, displayClass, classIndex, idx, 'discussion')
+                              const isScheduled = scheduledClasses.some((sc) => sc.id === entry.id)
+                              return (
+                                <div key={idx} className="section-item">
+                                  <div className="section-details">
+                                    <span>{discussion.Section || discussion.SectionID}</span>
+                                    <span>{discussion.Days} {discussion.Time}</span>
+                                    <span>{discussion.Location}</span>
+                                    <span>{discussion.AvaliableSeats}/{discussion.Limit}</span>
+                                  </div>
+                                  {isScheduled ? (
+                                    <button
+                                      className="action-btn remove-btn"
+                                      onClick={() => handleRemoveClass(entry.id)}
+                                    >
+                                      Remove
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="action-btn"
+                                      onClick={() => handleAddCourse(discussion, displayClass, 'discussion')}
+                                    >
+                                      Add
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Midterm */}
+                    {displayClass.midterms && displayClass.midterms.length > 0 && (
+                      <div className="class-section-group">
+                        <div className="section-header">
+                          <span className="section-chevron"></span>
+                          <span className="section-title">Midterm</span>
+                        </div>
+                        <div className="section-content">
+                          {displayClass.midterms.map((midterm, idx) => (
+                            <div key={idx} className="section-item">
+                              <div className="section-details">
+                                <span>{midterm.Days} {midterm.Time}</span>
+                                <span>{midterm.Location}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Final */}
+                    {displayClass.final && (
+                      <div className="class-section-group">
+                        <div className="section-header">
+                          <span className="section-chevron"></span>
+                          <span className="section-title">Final</span>
+                        </div>
+                        <div className="section-content">
+                          <div className="section-item">
+                            <div className="section-details">
+                              <span>{displayClass.final.Days} {displayClass.final.Time}</span>
+                              <span>{displayClass.final.Location}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </section>

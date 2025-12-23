@@ -5,11 +5,11 @@ import type { Class } from "../models/Class.js";
 type MEETING_BUCKET = "lectures" | "discussions" | "midterms" | "final";
 
 const MEETING_TYPES: Record<string, MEETING_BUCKET> = {
-  "LE": "lectures",
-  "DI": "discussions",
-  "MI": "midterms",
-  "FI": "final",
-}
+  LE: "lectures",
+  DI: "discussions",
+  MI: "midterms",
+  FI: "final",
+};
 
 export async function searchClass(search: string, term: string) {
   // Search page endpoint
@@ -35,7 +35,7 @@ export async function searchClass(search: string, term: string) {
     tabNum: "tabs-crs",
   });
 
-  // Creating the initial request to load classes    
+  // Creating the initial request to load classes
   await fetch(resultUrl, {
     method: "POST",
     headers: {
@@ -104,9 +104,8 @@ export async function searchClass(search: string, term: string) {
 
       // Check if the row is a header
       if (row.find("td.crsheader").length > 0) {
-
         // If the current course is not null, add it to the scraped classes
-        if(currentCourse != null) {
+        if (currentCourse != null) {
           scrapedClasses.push(currentCourse);
         }
 
@@ -122,7 +121,7 @@ export async function searchClass(search: string, term: string) {
         const combinedTitle = `${classCode} ${className}`;
 
         // Create a new course
-        if (className.length > 0){
+        if (className.length > 0) {
           currentCourse = {
             name: combinedTitle,
             teacher: "",
@@ -130,16 +129,14 @@ export async function searchClass(search: string, term: string) {
             discussions: [],
             midterms: [],
             final: null,
-          }
-        }else{
+          };
+        } else {
           currentCourse = null;
         }
-
       }
 
       // Handle course sections
-      if (row.find(".brdr").length > 0) {
-
+      if (row.hasClass("sectxt")) {
         // Only push if currentCourse exists
         if (currentCourse !== null) {
           const sectionElements = row.children("td");
@@ -159,33 +156,22 @@ export async function searchClass(search: string, term: string) {
           const meetingType = course.MeetingType;
           const bucket = MEETING_TYPES[meetingType];
 
-          // FIX: THIS IS NOT WORKING AS INTENDED
-          // To filter sections into distinct categories
-          if (bucket){
-            if(course.SectionID === "FI"){
-              currentCourse.final = course;
-            }else if(course.SectionID === "MI"){
-              currentCourse.midterms.push(course);
-            }else if(bucket !== "final"){
-              currentCourse[bucket].push(course);
-            }
+          // Push the course to the appropriate bucket
+          if (bucket && bucket !== "final") {
+            currentCourse[bucket]?.push(course);
           }
 
           // To set teacher field in Class obj if empty
-          if (currentCourse.teacher === ""){
+          if (currentCourse.teacher === "") {
             currentCourse.teacher = sectionElements.eq(9).text().trim();
           }
-
         }
-
       }
 
       // Handle finals and midterms
-      if (row.find(".brdr").length > 0 && row.length == 10){
-
+      if (row.hasClass("nonenrtxt")) {
         // Only push if currentCourse exists
-        if (currentCourse !== null){
-
+        if (currentCourse !== null) {
           const sectionElements = row.children("td");
           const course = {
             RestrictionCode: "",
@@ -195,8 +181,10 @@ export async function searchClass(search: string, term: string) {
             Section: "",
             Days: sectionElements.eq(3).text().trim(),
             Time: sectionElements.eq(5).text().trim(),
-            Location: sectionElements.eq(6).text().trim() + " " 
-              + sectionElements.eq(7).text().trim(),
+            Location:
+              sectionElements.eq(6).text().trim() +
+              " " +
+              sectionElements.eq(7).text().trim(),
             AvaliableSeats: "",
             Limit: "",
             searchText: "placeholder",
@@ -205,14 +193,13 @@ export async function searchClass(search: string, term: string) {
           const meetingType = course.MeetingType;
           const bucket = MEETING_TYPES[meetingType];
 
-          if (bucket && bucket !== "final"){
+          if (bucket && bucket === "final") {
             currentCourse.final = course;
+          } else {
+            currentCourse.midterms.push(course);
           }
-
         }
-
       }
-
     });
 
     // Push the last course if it exists
@@ -232,7 +219,4 @@ export async function searchClass(search: string, term: string) {
   console.log("Successfully scraped classes");
   console.log(scrapedClasses);
   return scrapedClasses;
-
 }
-
-searchClass("math 10a", "WI26");

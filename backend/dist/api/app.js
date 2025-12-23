@@ -5,7 +5,7 @@ import { connectDB } from "../db/mongo.js";
 export const app = express();
 // Enable CORS for all routes
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
     credentials: true
 }));
 // Middleware for parsing JSON
@@ -40,10 +40,12 @@ app.get("/api/courses", async (req, res) => {
         const serializedContent = content.map(doc => ({
             _id: doc._id?.toString(),
             name: doc.name,
-            sections: doc.sections || []
+            teacher: doc.teacher || '',
+            lectures: doc.lectures || [],
+            discussions: doc.discussions || [],
+            midterms: doc.midterms || [],
+            final: doc.final || null
         }));
-        // Setting origin headers
-        res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5174');
         // Return the results
         res.json(serializedContent);
     }
