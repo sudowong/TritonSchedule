@@ -3,8 +3,8 @@
 .env.local
 .env.*local
 
-# Yarn snapshots
-yarn.lock
-
 # Dependencies
 node_modules
+
+# Config
+package.json
