@@ -1,15 +1,25 @@
 import { connectToDB } from "../db/connectToDB.js";
-import type { term } from "../models/Term.js";
+import { disconnectFromDB } from "../db/disconnectFromDB.js";
+import type { Term } from "../models/Term.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export async function createTerm(newTerm: string) {
   const db = await connectToDB();
-  const terms = db.collection<term>("terms");
+  const terms = db.collection("terms");
 
-  const newInsertTerm: term = {
-    Type: "Term",
+  const newInsertTerm: Term = {
     Term: newTerm,
     IsActive: true,
   };
 
   await terms.insertOne(newInsertTerm);
+  console.log("Term created");
+
+  await disconnectFromDB();
+
+  return;
 }
+
+createTerm("WI30");

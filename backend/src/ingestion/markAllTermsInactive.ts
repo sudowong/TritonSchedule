@@ -1,16 +1,18 @@
 import { connectToDB } from "../db/connectToDB.js";
-import type { term } from "../models/Term.js";
+import { disconnectFromDB } from "../db/disconnectFromDB.js";
 
 async function markAllTermsInactive() {
   const db = await connectToDB();
-  const terms = db.collection<term>("terms");
 
-  const collectionExists = await db.listCollections().toArray();
-  const exists = collectionExists.length > 0;
+  const termsCollection = db.collection("terms");
 
-  if (!exists) {
-    throw new Error("Collection does not exists");
-  }
+  await termsCollection.updateMany({}, { $set: { IsActive: false } });
 
-  terms.updateMany({}, { $set: { isActive: false } });
+  console.log("Marked all terms inactive");
+
+  await disconnectFromDB();
+
+  return;
 }
+
+markAllTermsInactive();

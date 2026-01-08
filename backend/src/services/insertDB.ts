@@ -1,6 +1,6 @@
 import { connectToDB } from "../db/connectToDB.js";
 import { searchClass } from "../utils/searchClass.js";
-import type { Class } from "../models/Class.js";
+import type { Class } from "../models/Course.js";
 
 export async function insertDB() {
   const db = await connectToDB();
@@ -14,4 +14,3 @@ export async function insertDB() {
 }
 
 insertDB();
-

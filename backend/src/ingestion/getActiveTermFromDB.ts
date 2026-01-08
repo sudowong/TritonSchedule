@@ -1,9 +1,10 @@
 import { connectToDB } from "../db/connectToDB.js";
-import type { term } from "../models/Term.js";
+import { disconnectFromDB } from "../db/disconnectFromDB.js";
 
 export async function getActiveTermFromDB() {
   const db = await connectToDB();
 
+  // Check if there are any collections created already
   const collectionExists = await db.listCollections().toArray();
   const exist = collectionExists.length > 0;
 
@@ -11,8 +12,17 @@ export async function getActiveTermFromDB() {
     return null;
   }
 
-  const terms = await db.collection<term>("terms");
-  const currentTerm = terms.findOne({ isActive: true });
+  // Opens the terms collection -> filters for active term
+  const termsCollection = db.collection("terms");
+  const currentTerm = await termsCollection.findOne({ IsActive: true });
+
+  console.log("Retrieved Active Term from DB");
+
+  await disconnectFromDB();
+
+  console.log(currentTerm);
 
   return currentTerm;
 }
+
+getActiveTermFromDB();

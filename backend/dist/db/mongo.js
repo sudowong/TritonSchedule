@@ -1,18 +1,3 @@
 import { MongoClient, Db } from "mongodb";
 import dotenv from "dotenv";
-dotenv.config();
-const uri = process.env.MONGO_URI;
-const dbName = process.env.CLUSTER_ONE_NAME;
-let client;
-let db;
-export async function connectClassesDB() {
-    if (db)
-        return db;
-    client = new MongoClient(uri + dbName);
-    console.log(uri + dbName);
-    await client.connect();
-    db = client.db(dbName);
-    console.log("MongoDB connected");
-    return db;
-}
-connectClassesDB();
+export const uri = process.env.MONGO_URI;

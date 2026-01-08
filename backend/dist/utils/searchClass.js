@@ -96,7 +96,6 @@ export async function searchClass(search, term) {
                 // Create a new course
                 if (className.length > 0) {
                     currentCourse = {
-                        Type: "Course",
                         Name: combinedTitle,
                         Term: term,
                         Teacher: "",

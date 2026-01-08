@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
+import type { Class } from "../models/Course.js";
 import { extractCookies } from "./extractCookies.js";
-import type { Class } from "../models/Class.js";
 
 type MEETING_BUCKET = "Lecture" | "Discussions" | "Midterms" | "Final";
 
@@ -123,7 +123,6 @@ export async function searchClass(search: string, term: string) {
         // Create a new course
         if (className.length > 0) {
           currentCourse = {
-            Type: "Course",
             Name: combinedTitle,
             Term: term,
             Teacher: "",

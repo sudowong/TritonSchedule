@@ -1,5 +1,4 @@
-export type term = {
-  Type: string;
+export type Term = {
   Term: string;
   IsActive: boolean;
 };
