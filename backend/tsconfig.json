@@ -9,7 +9,8 @@
     "rootDir": "src",
     "outDir": "dist",
     "lib": [
-      "ESNext"
+      "ESNext",
+      "DOM"
     ],
     "strict": true,
     "isolatedModules": true,

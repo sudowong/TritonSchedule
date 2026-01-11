@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 import { Db } from "mongodb";
 import { connectToDB } from "../db/connectToDB.js";
 import { disconnectFromDB } from "../db/disconnectFromDB.js";
-import type { Class } from "../models/Course.js";
+import type { Course } from "../models/Course.js";
 import { insertDB } from "../services/insertDB.js";
 import { searchSubject } from "../utils/searchSubject.js";
 
@@ -250,7 +250,7 @@ export async function scrapeFullTerm(new_term: string) {
 
   for (const subject of UCSD_SUBJECT_CODES) {
     await sleep(5000);
-    let currentScraped: Class[] = await searchSubject(subject, new_term);
+    let currentScraped: Course[] = await searchSubject(subject, new_term);
 
     if (currentScraped.length > 0) {
       await insertDB(db, currentScraped, "courses");

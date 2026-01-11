@@ -1,6 +1,6 @@
 import type { Section } from "./Section.js";
 
-export type Class = {
+export type Course = {
   Name: string;
   Term: string;
   Teacher: string;

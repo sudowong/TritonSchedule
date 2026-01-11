@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { Class } from "../models/Course.js";
+import type { Course } from "../models/Course.js";
 import { extractCookies } from "./extractCookies.js";
 
 type MEETING_BUCKET = "Lecture" | "Discussions" | "Midterms" | "Final";
@@ -63,8 +63,8 @@ export async function searchSubject(search: string, term: string) {
 
   let page: number = 1;
   let hasMore: boolean = true;
-  let scrapedClasses: Class[] = [];
-  let currentCourse: Class | null = null;
+  let scrapedClasses: Course[] = [];
+  let currentCourse: Course | null = null;
 
   while (hasMore) {
     const url =

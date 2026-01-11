@@ -1,11 +1,11 @@
 import { connectToDB } from "../db/connectToDB.js";
 import { searchSubject } from "../utils/searchSubject.js";
 import { Db } from "mongodb";
-import type { Class } from "../models/Course.js";
+import type { Course } from "../models/Course.js";
 
 export async function insertDB(
   db: Db,
-  content: Class[],
+  content: Course[],
   collection_name: string,
 ) {
   const courses = db.collection(collection_name);

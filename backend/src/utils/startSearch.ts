@@ -1,4 +1,7 @@
 import puppeteer from "puppeteer";
+import type { Course } from "../models/Course.js";
+import type { Section } from "../models/Section.js";
+import type { Term } from "../models/Term.js";
 
 export const SUBJECT_CODES = ["AIP ", "AAS "];
 
@@ -7,7 +10,7 @@ export const SUBJECT_CODES = ["AIP ", "AAS "];
 // for each search. I also need to import the models for storing the data
 // in a document to store into the DB. Then I reparse the HTML to get all
 // the important data
-export async function initClassScrape() {
+export async function startSearch() {
   // New browser instance
   const browser = await puppeteer.launch({ headless: false });
 
