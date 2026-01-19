@@ -20,6 +20,9 @@ export async function scrapeCurrentPage(term, page) {
             combinedTitle = `${courseNumber} ${courseTitle}`;
         }
         if (combinedTitle.length > 0) {
+            if (current != null) {
+                results.push(current);
+            }
             current = {
                 Name: combinedTitle,
                 Term: term,
@@ -31,6 +34,8 @@ export async function scrapeCurrentPage(term, page) {
             };
             continue;
         }
+        const nonTestBucket = await row.$$eval("td.brdr", (item) => item[3]?.textContent?.trim());
+        const testBucket = await row.$$eval("td.brdr", (item) => item[2]?.textContent?.trim());
         const nestedRows = await row.$$eval("td.brdr", (tds) => {
             const cells = new Array(13).fill("");
             for (let i = 0; i < tds.length; i++) {
@@ -38,7 +43,43 @@ export async function scrapeCurrentPage(term, page) {
             }
             return cells;
         });
-        console.log(nestedRows);
+        if (current != null) {
+            if (nonTestBucket === "DI" || nonTestBucket === "LE") {
+                if (current.Teacher.length <= 0) {
+                    current.Teacher = nestedRows[9];
+                }
+                if (current.Lecture == null && nonTestBucket === "LE") {
+                    current.Lecture = {
+                        Days: nestedRows[5],
+                        Time: nestedRows[6],
+                        Location: nestedRows[7] + " " + nestedRows[8],
+                    };
+                }
+                if (nonTestBucket === "DI") {
+                    current.Discussions.push({
+                        Days: nestedRows[5],
+                        Time: nestedRows[6],
+                        Location: nestedRows[7] + " " + nestedRows[8],
+                    });
+                }
+            }
+            else if (testBucket === "MI" || testBucket === "FI") {
+                if (testBucket === "MI") {
+                    current.Midterms.push({
+                        Days: nestedRows[3],
+                        Time: nestedRows[5],
+                        Location: nestedRows[6] + " " + nestedRows[7],
+                    });
+                }
+                if (testBucket === "FI") {
+                    current.Final = {
+                        Days: nestedRows[3],
+                        Time: nestedRows[5],
+                        Location: nestedRows[6] + " " + nestedRows[7],
+                    };
+                }
+            }
+        }
     }
     return results;
 }
