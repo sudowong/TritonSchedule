@@ -1,156 +1,202 @@
 import puppeteer from "puppeteer";
-import type { Course } from "../models/Course.js";
-import type { Section } from "../models/Section.js";
-import type { Term } from "../models/Term.js";
 import { Db } from "mongodb";
 import { scrapeCurrentPage } from "./scrapeCurrentPage.js";
 import { insertDB } from "../services/insertDB.js";
 import { connectToDB } from "../db/connectToDB.js";
 
+/* TODO: Fix the subject codes, for some of them it doesn't work super well
+ * - Overscraping for single page content pages (idk why)
+ * - Some subject codes are invalid, where it's not clicking on any subject at all (some of them aren't 4 chars long)
+ */
 export const SUBJECT_CODES = [
   "AIP ",
-  "AAS ",
-  "AWP ",
-  "ANES",
-  "ANBI",
-  "ANAR",
-  "ANTH",
-  "ANSC",
-  "AAPI",
-  "ASTR",
-  "AUD ",
-  "BENG",
-  "BNFO",
-  "BIEB",
-  "BICD",
-  "BIPN",
-  "BIBC",
-  "BGGN",
-  "BGJC",
-  "BGRD",
-  "BGSE",
-  "BILD",
-  "BIMM",
-  "BISP",
-  "BIOM",
-  "CMM ",
-  "CENG",
-  "CHEM",
-  "CLX ",
-  "CHIN",
-  "CLAS",
-  "CCS ",
-  "CLIN",
-  "CLRE",
-  "COGS",
-  "COMM",
-  "COGR",
-  "CSS ",
-  "CSE ",
-  "COSE",
-  "CCE ",
-  "CGS ",
-  "CAT ",
-  "TDDM",
-  "TDHD",
-  "TDMV",
+
+  // "LIPO",
+  // "LISP",
+  // "LTAM",
+  // "LTAF",
+  // "LTCO",
+  // "LTCS",
+  // "LTEU",
+  // "LTFR",
+  // "LTGM",
+  // "LTGK",
+  // "LTIT",
+  // "LTKO",
+  // "LTLA",
+  // "LTRU",
+  // "LTSP",
+  // "LTTH",
+  // "LTWR",
+  // "LTEN",
+  // "LTWL",
+  // "LTEA",
+  // "MMW ",
+
+  "MBC ",
+  "MATS",
+  "MATH",
+  "MSED",
+  "MAE ",
+  "MED ",
+  "MUIR",
+  "MCWP",
+  "MUS ",
+  "NANO",
+  "NEU ",
+  "NEUG",
+  "OBG ",
+  "OPTH",
+  "ORTH",
+  "PATH",
+  "PEDS",
+  "PHAR",
+  "SPPS",
+  "PHIL",
+  "PAE ",
+  "PHYS",
+  "PHYA",
+  "POLI",
+  "PSY ",
+  "PSYC",
+
+  // "PH ",
+
+  "PHB ",
+  "RMAS",
+  "RAD ",
+  "MGTF",
+  "MGT ",
+  "MGTA",
+  "MGTP",
+  "RELI",
+  "RMED",
+  "REV ",
+  "SPPH",
+  "SOMI",
+  "SOMC",
+  "SIOC",
+  "SIOG",
+  "SIOB",
+  "SIO ",
+  "SEV ",
+  "SOCG",
+  "SOCE",
+
+  // "SOCI",
+
+  "SE ",
+  "SURG",
+  "SYN ",
+  "TDAC",
+  "TDDE",
+  "TDDR",
+  "TDGE",
+  "TDGR",
+  "TDHT",
+  "TDPW",
   "TDPR",
-  "TDTR",
-  "DSC ",
-  "DSE ",
-  "DERM",
-  "DSGN",
-  "DOC ",
-  "DDPM",
-  "ECON",
-  "EDSP",
-  "ERC ",
+  "TMC ",
+  "USP ",
+  "UROL",
+  "VIS ",
+  "WCWP",
+  "WES ",
 ];
-// TODO: Ended at ECE
 
 export async function startSearch() {
-  // New browser instance
+  // Browser intialization
   const browser = await puppeteer.launch({ headless: false });
-
   const page = await browser.newPage();
-
-  await page.goto(
-    "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudent.htm",
-    { waitUntil: "networkidle2" },
-  );
-
-  await page.waitForSelector("#selectedSubjects");
-  await page.select("select#selectedSubjects", "MATH");
-  await page.click("#socFacSubmit");
-
-  await page.waitForSelector("#socDisplayCVO");
-
-  /* To determine the amount of pages */
-
-  const pages = await page.evaluate(() => {
-    return Array.from(
-      document.querySelectorAll<HTMLAnchorElement>('a[href*="page="]'),
-    )
-      .map((a) => a.getAttribute("href"))
-      .filter((h): h is string => h !== null);
-  });
-
-  let lastPage: number | null = null;
-
-  if (pages.length > 0) {
-    const lastHref = pages[pages.length - 1];
-    const pageParam = new URL(lastHref, "https://example.com").searchParams.get(
-      "page",
-    );
-
-    lastPage = pageParam ? parseInt(pageParam, 10) : null;
-  }
-
-  lastPage = lastPage != null ? lastPage + 1 : null;
 
   /*-------------------------------------------------------------------------*/
 
-  let currentPage = 0;
+  // Scrape all subjects
+  for (const code of SUBJECT_CODES) {
+    await page.goto(
+      "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudent.htm",
+      { waitUntil: "networkidle2" },
+    );
+    await page.waitForSelector("#selectedSubjects");
+    await page.select("select#selectedSubjects", code);
+    await page.click("#socFacSubmit");
+    await page.waitForSelector("#socDisplayCVO");
 
-  // INPROG: Per subject scraping every page
-  // - future me, i want to test if i can break out of the loop after
-  //    all pages were clicked (or rather your out of pages)
-  while (true) {
-    if (currentPage == lastPage) {
-      break;
+    // To determine the max # of pages
+    const pages = await page.evaluate(() => {
+      return Array.from(
+        document.querySelectorAll<HTMLAnchorElement>('a[href*="page="]'),
+      )
+        .map((a) => a.getAttribute("href"))
+        .filter((h): h is string => h !== null);
+    });
+
+    let lastPage: number | null = null;
+
+    if (pages.length > 0) {
+      const lastHref = pages[pages.length - 1];
+      const pageParam = new URL(
+        lastHref,
+        "https://example.com",
+      ).searchParams.get("page");
+
+      lastPage = pageParam ? parseInt(pageParam, 10) : null;
     }
 
-    let curPageContent = await scrapeCurrentPage("WI26", page);
+    lastPage = lastPage != null ? lastPage + 1 : 0;
 
-    let db: Db = await connectToDB();
+    let currentPage = 0;
 
-    await insertDB(db, curPageContent, "courses");
+    while (currentPage < lastPage) {
+      // If last page reached, break
+      // if (currentPage == lastPage) {
+      //   break;
+      // }
 
-    currentPage += 1;
+      // Scrapes contents of current page
+      let curPageContent = await scrapeCurrentPage("WI26", page);
 
-    let didClick = await page.evaluate((nextPage) => {
-      const links = Array.from(
-        document.querySelectorAll<HTMLAnchorElement>(
-          'a[href*="scheduleOfClassesStudentResult.htm?page="]',
-        ),
-      );
-
-      const nextLink = links.find(
-        (a) => a.textContent?.trim() === String(nextPage),
-      );
-
-      if (!nextLink) {
-        return false;
+      if (curPageContent.length <= 0) {
+        break;
       }
 
-      nextLink.click();
-      return true;
-    }, currentPage);
+      /*
+       * Connects, and inserts document to DB
+       * Note: Might block if you don't add IP to DB allowed list
+       */
+      let db: Db = await connectToDB();
+      await insertDB(db, curPageContent, "courses");
 
-    if (didClick) {
-      await page.waitForNavigation({ waitUntil: "networkidle0" });
-    } else {
-      break;
+      currentPage += 1;
+
+      /**
+       * Checks if next page button exists
+       *
+       * @return true if exists, false if doesn't
+       */
+      let didClick = await page.evaluate((nextPage) => {
+        const links = Array.from(
+          document.querySelectorAll<HTMLAnchorElement>(
+            'a[href*="scheduleOfClassesStudentResult.htm?page="]',
+          ),
+        );
+
+        const nextLink = links.find(
+          (a) => a.textContent?.trim() === String(nextPage),
+        );
+
+        if (!nextLink) {
+          return false;
+        }
+
+        nextLink.click();
+        return true;
+      }, currentPage);
+
+      // Waits for page to load if clicked
+      if (didClick) {
+        await page.waitForNavigation({ waitUntil: "networkidle0" });
+      }
     }
   }
 
