@@ -1,5 +1,4 @@
 import { Db } from "mongodb";
-import type { Course } from "../models/Course.js";
 
 export async function insertDB(
   db: Db,

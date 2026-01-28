@@ -6,11 +6,6 @@ import { connectToDB } from "../db/connectToDB.js";
 import { disconnectFromDB } from "../db/disconnectFromDB.js";
 import { insertDB } from "../services/insertDB.js";
 import { scrapeCurrentPage } from "./scrapeCurrentPage.js";
-// TODO: RMP data for each subject (should be in scrape each page, so when were scraping each prof we use the API to search as well)
-//
-// - Check Mongo scraped items to check where there are blanks and validate items
-//
-// - Check harpoon for index.ts that is where i was testing the RMP API
 export async function startSearch() {
     // Browser intialization
     const browser = await puppeteer.launch();
@@ -85,4 +80,5 @@ export async function startSearch() {
     browser.close(); // To close the browser instance
     return;
 }
+// XXX: Used for testing purposes ATM, get rid of once the function is being called in ingest.ts
 await startSearch();

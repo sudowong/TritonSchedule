@@ -25,8 +25,7 @@ export async function scrapeCurrentPage(term: string, page: Page) {
 
     let combinedTitle = "";
 
-    // Check if courseNumber or courseTitle is undefined
-    // before assigning
+    // Check if courseNumber or courseTitle is undefined before assigning
     if (courseNumber != undefined && courseTitle != undefined) {
       combinedTitle = `${courseNumber} ${courseTitle}`;
     }
@@ -74,13 +73,8 @@ export async function scrapeCurrentPage(term: string, page: Page) {
         nonTestBucket == "SE"
       ) {
         if (current.Teacher.length <= 0) {
-          current.Teacher = nestedRows[9]
-            .toLowerCase()
-            .split(", ")
-            .join(" ")
-            .split(" ")
-            .slice(0, 2)
-            .join(" ");
+          current.Teacher = nestedRows[9];
+          // await rmpUpdate(current.Teacher);
         }
 
         if (current.Lecture == null && nonTestBucket === "LE") {
@@ -116,13 +110,8 @@ export async function scrapeCurrentPage(term: string, page: Page) {
         }
       } else if (nonTestBucket === "IT") {
         if (current.Teacher.length <= 0) {
-          current.Teacher = nestedRows[9]
-            .toLowerCase()
-            .split(", ")
-            .join(" ")
-            .split(" ")
-            .slice(0, 2)
-            .join(" ");
+          current.Teacher = nestedRows[9];
+          // await rmpUpdate(current.Teacher);
         }
 
         current.Lecture = {
@@ -130,18 +119,6 @@ export async function scrapeCurrentPage(term: string, page: Page) {
           Time: nestedRows[5],
           Location: nestedRows[5],
         };
-      }
-    }
-
-    // TODO: for some reason this matching isn't working, i need to find a new way to match
-    // Check if teacher exists in the document folder in DB
-    if (current?.Teacher && current.Teacher.length > 0) {
-      const exists = await db
-        .collection("rmpData")
-        .findOne({ name: { $regex: current.Teacher } });
-
-      if (!exists) {
-        await rmpUpdate(current.Teacher);
       }
     }
   }
