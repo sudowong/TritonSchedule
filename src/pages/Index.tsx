@@ -1,13 +1,25 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Routes, Route } from "react-router-dom";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { CalendarProvider } from "@/context/CalendarContext";
+import SearchCourses from "./SearchCourses";
+import CalendarPage from "./CalendarPage";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <CalendarProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <main className="flex-1 bg-background overflow-auto">
+            <Routes>
+              <Route path="/" element={<SearchCourses />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+            </Routes>
+          </main>
+        </div>
+      </SidebarProvider>
+    </CalendarProvider>
   );
 };
 
