@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { CourseCard } from "@/components/CourseCard";
+import { CourseRow } from "@/components/CourseRow";
 import { sampleCourses, Course } from "@/data/sampleCourses";
 import { useCalendar } from "@/context/CalendarContext";
 import { toast } from "sonner";
@@ -27,11 +27,8 @@ export default function SearchCourses() {
   }, [events]);
 
   const handleAddToCalendar = (course: Course) => {
-    // Parse the schedule to create recurring events
     const today = new Date();
-    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     
-    // Extract time from schedule (e.g., "9:00 AM - 10:30 AM")
     const timeMatch = course.schedule.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
     let startTime = "09:00";
     let endTime = "10:30";
@@ -41,7 +38,6 @@ export default function SearchCourses() {
       endTime = convertTo24Hour(timeMatch[2]);
     }
 
-    // Add as a single event for demo purposes
     addEvent({
       id: course.id,
       title: course.name,
@@ -56,7 +52,7 @@ export default function SearchCourses() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Search Courses</h1>
         <p className="text-muted-foreground">
@@ -79,9 +75,9 @@ export default function SearchCourses() {
           <p className="text-muted-foreground">No courses found matching your search.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2">
           {filteredCourses.map((course) => (
-            <CourseCard
+            <CourseRow
               key={course.id}
               course={course}
               isAdded={addedCourseIds.has(course.id)}

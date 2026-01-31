@@ -1,5 +1,6 @@
-import { Search, Calendar, GraduationCap } from "lucide-react";
+import { Search, Calendar } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { TridentIcon } from "@/components/icons/TridentIcon";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -10,9 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
   { title: "Search Courses", url: "/", icon: Search },
@@ -27,10 +26,10 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+            <TridentIcon className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-semibold text-foreground">Course Planner</h2>
+            <h2 className="font-semibold text-foreground">Triton Schedule</h2>
             <p className="text-xs text-muted-foreground">Student Portal</p>
           </div>
         </div>
@@ -65,19 +64,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="https://github.com/shadcn.png" alt="Student" />
-            <AvatarFallback>ST</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Alex Student</p>
-            <p className="text-xs text-muted-foreground truncate">alex@university.edu</p>
-          </div>
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
