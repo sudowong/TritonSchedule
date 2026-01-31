@@ -8,11 +8,7 @@ export async function getActiveTermFromDB() {
     if (!exist) {
         return null;
     }
-    // Opens the terms collection -> filters for active term
     const termsCollection = db.collection("terms");
     const currentTerm = await termsCollection.findOne({ IsActive: true });
-    console.log("Retrieved Active Term from DB");
-    await disconnectFromDB();
-    console.log(currentTerm);
     return currentTerm;
 }

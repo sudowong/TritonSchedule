@@ -9,11 +9,11 @@ import {
 
 const schoolName = "University of California San Diego";
 
-export async function rmpUpdate() {
+export async function rmpUpdate(curTerm: string) {
 
   let searched = new Set<string>();
   const db: Db = await connectToDB();
-  let docs = await db.collection("courses").find({}).toArray();
+  let docs = await db.collection("courses").find({ term: curTerm }).toArray();
 
   const school = await searchSchool(schoolName);
 
@@ -64,5 +64,3 @@ export async function rmpUpdate() {
   return;
 }
 
-// TESTING (delete later)
-await rmpUpdate();

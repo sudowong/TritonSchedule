@@ -7,7 +7,7 @@ import { disconnectFromDB } from "../db/disconnectFromDB.js";
 import { insertDB } from "../services/insertDB.js";
 import { scrapeCurrentPage } from "./scrapeCurrentPage.js";
 import { rmpUpdate } from "./rmpUpdate.js";
-export async function startSearch() {
+export async function startSearch(term) {
     // Browser intialization
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
@@ -45,7 +45,7 @@ export async function startSearch() {
         let currentPage = 0;
         while (currentPage < lastPage) {
             // Scrapes contents of current page
-            let curPageContent = await scrapeCurrentPage("WI26", page);
+            let curPageContent = await scrapeCurrentPage(term, page);
             if (curPageContent.length <= 0) {
                 break;
             }
@@ -76,11 +76,8 @@ export async function startSearch() {
         }
         subjectBar.increment();
     }
-    await rmpUpdate();
+    await rmpUpdate(term);
     subjectBar.stop(); // Close TUI
-    disconnectFromDB(); // Close connect to DB
     browser.close(); // To close the browser instance
     return;
 }
-// XXX: Used for testing purposes ATM, get rid of once the function is being called in ingest.ts
-await startSearch();

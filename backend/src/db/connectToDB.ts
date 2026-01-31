@@ -17,7 +17,5 @@ export async function connectToDB() {
 
   db = client.db(dbName);
 
-  console.log("Established connection to DB");
-
   return db;
 }

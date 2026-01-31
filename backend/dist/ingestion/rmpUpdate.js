@@ -3,18 +3,11 @@ import { connectToDB } from "../db/connectToDB.js";
 import { Db } from "mongodb";
 import { insertDB } from "../services/insertDB.js";
 import { searchSchool, getProfessorRatingAtSchoolId, } from "ratemyprofessor-api";
-// TODO:
-// - Once i scrape all the contents from the website
-// i go through the objects in the mongo database and query the
-// teacher names with the API, and then input that information in the
-// document folder, and add each teacher to a set to track that it was
-// search for
-// FIXME: You'll use this independently of the webreg script
 const schoolName = "University of California San Diego";
-export async function rmpUpdate() {
+export async function rmpUpdate(curTerm) {
     let searched = new Set();
     const db = await connectToDB();
-    let docs = await db.collection("courses").find({}).toArray();
+    let docs = await db.collection("courses").find({ term: curTerm }).toArray();
     const school = await searchSchool(schoolName);
     // Add items to searched set 
     for (const doc of docs) {
@@ -47,6 +40,6 @@ export async function rmpUpdate() {
         }
         rmpBar.increment();
     }
+    rmpBar.stop(); // Close TUI
     return;
 }
-await rmpUpdate();

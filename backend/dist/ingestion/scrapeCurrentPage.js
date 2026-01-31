@@ -1,6 +1,5 @@
 import { connectToDB } from "../db/connectToDB.js";
 import { Db } from "mongodb";
-import { rmpUpdate } from "./rmpUpdate.js";
 const db = await connectToDB();
 export async function scrapeCurrentPage(term, page) {
     const rows = await page.$$("tr");
@@ -92,4 +91,8 @@ export async function scrapeCurrentPage(term, page) {
         }
     }
     return results;
+}
+export function testPrint(term) {
+    console.log(term);
+    return;
 }

@@ -1,5 +1,4 @@
 import { connectToDB } from "../db/connectToDB.js";
-import { disconnectFromDB } from "../db/disconnectFromDB.js";
 import type { Term } from "../models/Term.js";
 
 export async function createTerm(newTerm: string) {
@@ -12,9 +11,6 @@ export async function createTerm(newTerm: string) {
   };
 
   await terms.insertOne(newInsertTerm);
-  console.log("Term created");
-
-  await disconnectFromDB();
 
   return;
 }
