@@ -1,16 +1,11 @@
 import { useState, useMemo } from "react";
 import {
   format,
-  startOfMonth,
-  endOfMonth,
   startOfWeek,
-  endOfWeek,
   addDays,
-  addMonths,
-  subMonths,
-  isSameMonth,
+  addWeeks,
+  subWeeks,
   isSameDay,
-  isToday,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,38 +14,72 @@ import { useCalendar } from "@/context/CalendarContext";
 import { CalendarEvent } from "@/types/calendar";
 import { cn } from "@/lib/utils";
 
+const HOUR_HEIGHT = 60; // pixels per hour
+const START_HOUR = 7; // 7 AM
+const END_HOUR = 22; // 10 PM
+const TOTAL_HOURS = END_HOUR - START_HOUR;
+
+function parseTime(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return hours + minutes / 60;
+}
+
+function getEventStyle(event: CalendarEvent, overlappingEvents: CalendarEvent[], index: number) {
+  const startTime = parseTime(event.startTime);
+  const endTime = parseTime(event.endTime);
+  const duration = endTime - startTime;
+  
+  const top = (startTime - START_HOUR) * HOUR_HEIGHT;
+  const height = duration * HOUR_HEIGHT;
+  
+  const totalOverlapping = overlappingEvents.length;
+  const width = totalOverlapping > 1 ? `${100 / totalOverlapping}%` : "100%";
+  const left = totalOverlapping > 1 ? `${(index * 100) / totalOverlapping}%` : "0";
+  
+  return { top, height, width, left };
+}
+
+function findOverlappingEvents(event: CalendarEvent, allEvents: CalendarEvent[]): CalendarEvent[] {
+  const eventStart = parseTime(event.startTime);
+  const eventEnd = parseTime(event.endTime);
+  
+  return allEvents.filter((other) => {
+    if (!isSameDay(new Date(other.date), new Date(event.date))) return false;
+    const otherStart = parseTime(other.startTime);
+    const otherEnd = parseTime(other.endTime);
+    return eventStart < otherEnd && eventEnd > otherStart;
+  });
+}
+
 export default function CalendarPage() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => 
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string>("09:00");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
 
-  const calendarDays = useMemo(() => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 5 }, (_, i) => addDays(currentWeekStart, i));
+  }, [currentWeekStart]);
 
-    const days: Date[] = [];
-    let day = startDate;
-    while (day <= endDate) {
-      days.push(day);
-      day = addDays(day, 1);
-    }
-    return days;
-  }, [currentMonth]);
+  const timeSlots = useMemo(() => {
+    return Array.from({ length: TOTAL_HOURS }, (_, i) => START_HOUR + i);
+  }, []);
 
   const getEventsForDay = (day: Date) => {
     return events.filter((event) => isSameDay(new Date(event.date), day));
   };
 
-  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const handleToday = () => setCurrentMonth(new Date());
+  const handlePrevWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
+  const handleNextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
+  const handleToday = () => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  const handleDayClick = (day: Date) => {
+  const handleTimeSlotClick = (day: Date, hour: number) => {
     setSelectedDate(day);
+    setSelectedTime(`${hour.toString().padStart(2, "0")}:00`);
     setEditingEvent(null);
     setModalOpen(true);
   };
@@ -59,11 +88,13 @@ export default function CalendarPage() {
     e.stopPropagation();
     setEditingEvent(event);
     setSelectedDate(new Date(event.date));
+    setSelectedTime(event.startTime);
     setModalOpen(true);
   };
 
   const handleAddEvent = () => {
     setSelectedDate(new Date());
+    setSelectedTime("09:00");
     setEditingEvent(null);
     setModalOpen(true);
   };
@@ -79,25 +110,23 @@ export default function CalendarPage() {
     }
   };
 
-  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekRangeText = `${format(weekDays[0], "MMM d")} - ${format(weekDays[4], "MMM d, yyyy")}`;
 
   return (
     <div className="p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            {format(currentMonth, "MMMM yyyy")}
-          </h1>
-          <p className="text-muted-foreground">Manage your schedule</p>
+          <h1 className="text-3xl font-bold text-foreground">{weekRangeText}</h1>
+          <p className="text-muted-foreground">Weekly Schedule</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleToday}>
             Today
           </Button>
-          <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+          <Button variant="outline" size="icon" onClick={handlePrevWeek}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={handleNextMonth}>
+          <Button variant="outline" size="icon" onClick={handleNextWeek}>
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button onClick={handleAddEvent} className="ml-2">
@@ -107,67 +136,111 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex-1 border border-border rounded-lg overflow-hidden bg-card">
-        {/* Week day headers */}
-        <div className="grid grid-cols-7 border-b border-border bg-muted/50">
+      <div className="flex-1 border border-border rounded-lg overflow-hidden bg-card flex flex-col">
+        {/* Day headers */}
+        <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border bg-muted/50">
+          <div className="px-2 py-3 text-center text-sm font-medium text-muted-foreground border-r border-border">
+            Time
+          </div>
           {weekDays.map((day) => (
             <div
-              key={day}
-              className="px-2 py-3 text-center text-sm font-medium text-muted-foreground"
+              key={day.toISOString()}
+              className={cn(
+                "px-2 py-3 text-center border-r border-border last:border-r-0",
+                isSameDay(day, new Date()) && "bg-primary/10"
+              )}
             >
-              {day}
+              <div className="text-sm font-medium text-muted-foreground">
+                {format(day, "EEE")}
+              </div>
+              <div
+                className={cn(
+                  "text-lg font-semibold",
+                  isSameDay(day, new Date())
+                    ? "text-primary"
+                    : "text-foreground"
+                )}
+              >
+                {format(day, "d")}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 flex-1">
-          {calendarDays.map((day, index) => {
-            const dayEvents = getEventsForDay(day);
-            const isCurrentMonth = isSameMonth(day, currentMonth);
-            const isCurrentDay = isToday(day);
-
-            return (
-              <div
-                key={index}
-                onClick={() => handleDayClick(day)}
-                className={cn(
-                  "min-h-[100px] border-b border-r border-border p-1 cursor-pointer transition-colors hover:bg-accent/50",
-                  !isCurrentMonth && "bg-muted/30",
-                  index % 7 === 6 && "border-r-0"
-                )}
-              >
-                <div className="flex items-center justify-center mb-1">
-                  <span
-                    className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-full text-sm",
-                      isCurrentDay && "bg-primary text-primary-foreground font-semibold",
-                      !isCurrentMonth && "text-muted-foreground"
-                    )}
-                  >
-                    {format(day, "d")}
+        {/* Time grid */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-[60px_repeat(5,1fr)] relative">
+            {/* Time labels column */}
+            <div className="border-r border-border">
+              {timeSlots.map((hour) => (
+                <div
+                  key={hour}
+                  className="h-[60px] px-2 flex items-start justify-end pt-0 text-xs text-muted-foreground border-b border-border"
+                >
+                  <span className="-mt-2">
+                    {format(new Date().setHours(hour, 0), "h a")}
                   </span>
                 </div>
-                <div className="space-y-0.5 overflow-hidden">
-                  {dayEvents.slice(0, 3).map((event) => (
-                    <div
-                      key={event.id}
-                      onClick={(e) => handleEventClick(event, e)}
-                      className="px-1.5 py-0.5 text-xs rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: event.color }}
-                    >
-                      {event.title}
-                    </div>
-                  ))}
-                  {dayEvents.length > 3 && (
-                    <div className="text-xs text-muted-foreground px-1.5">
-                      +{dayEvents.length - 3} more
-                    </div>
+              ))}
+            </div>
+
+            {/* Day columns */}
+            {weekDays.map((day) => {
+              const dayEvents = getEventsForDay(day);
+              
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    "relative border-r border-border last:border-r-0",
+                    isSameDay(day, new Date()) && "bg-primary/5"
                   )}
+                >
+                  {/* Hour slots for clicking */}
+                  {timeSlots.map((hour) => (
+                    <div
+                      key={hour}
+                      onClick={() => handleTimeSlotClick(day, hour)}
+                      className="h-[60px] border-b border-border cursor-pointer hover:bg-accent/30 transition-colors"
+                    />
+                  ))}
+
+                  {/* Events overlay */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {dayEvents.map((event) => {
+                      const overlapping = findOverlappingEvents(event, dayEvents);
+                      const index = overlapping.findIndex((e) => e.id === event.id);
+                      const style = getEventStyle(event, overlapping, index);
+
+                      return (
+                        <div
+                          key={event.id}
+                          onClick={(e) => handleEventClick(event, e)}
+                          className="absolute px-1 py-0.5 pointer-events-auto cursor-pointer group"
+                          style={{
+                            top: `${style.top}px`,
+                            height: `${style.height}px`,
+                            width: style.width,
+                            left: style.left,
+                          }}
+                        >
+                          <div
+                            className="h-full w-full rounded-md px-2 py-1 overflow-hidden text-white text-xs shadow-sm group-hover:opacity-90 transition-opacity"
+                            style={{ backgroundColor: event.color }}
+                          >
+                            <div className="font-medium truncate">{event.title}</div>
+                            <div className="opacity-90 truncate">
+                              {event.startTime} - {event.endTime}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -176,6 +249,7 @@ export default function CalendarPage() {
         onOpenChange={setModalOpen}
         event={editingEvent}
         selectedDate={selectedDate || undefined}
+        defaultStartTime={selectedTime}
         onSave={handleSaveEvent}
         onDelete={deleteEvent}
       />

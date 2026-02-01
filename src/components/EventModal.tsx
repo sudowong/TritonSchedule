@@ -33,6 +33,7 @@ interface EventModalProps {
   onOpenChange: (open: boolean) => void;
   event?: CalendarEvent | null;
   selectedDate?: Date;
+  defaultStartTime?: string;
   onSave: (event: Omit<CalendarEvent, "id"> & { id?: string }) => void;
   onDelete?: (id: string) => void;
 }
@@ -42,6 +43,7 @@ export function EventModal({
   onOpenChange,
   event,
   selectedDate,
+  defaultStartTime = "09:00",
   onSave,
   onDelete,
 }: EventModalProps) {
@@ -61,8 +63,9 @@ export function EventModal({
     } else {
       setTitle("");
       setDate(selectedDate || new Date());
-      setStartTime("09:00");
-      setEndTime("10:00");
+      setStartTime(defaultStartTime);
+      const [hours] = defaultStartTime.split(":").map(Number);
+      setEndTime(`${(hours + 1).toString().padStart(2, "0")}:00`);
       setColor(eventColors[0].value);
     }
   }, [event, selectedDate, open]);
