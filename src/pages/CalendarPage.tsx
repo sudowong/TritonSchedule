@@ -168,18 +168,20 @@ export default function CalendarPage() {
         </div>
 
         {/* Time grid */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-[60px_repeat(5,1fr)] relative">
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="grid grid-cols-[60px_repeat(5,1fr)]">
             {/* Time labels column */}
             <div className="border-r border-border">
-              {timeSlots.map((hour) => (
+              {timeSlots.map((hour, idx) => (
                 <div
                   key={hour}
-                  className="h-[60px] px-2 flex items-start justify-end pt-0 text-xs text-muted-foreground border-b border-border"
+                  className="h-[60px] relative border-b border-border"
                 >
-                  <span className="-mt-2">
-                    {format(new Date().setHours(hour, 0), "h a")}
-                  </span>
+                  {idx > 0 && (
+                    <span className="absolute -top-2.5 right-2 text-xs text-muted-foreground bg-card px-1">
+                      {format(new Date().setHours(hour, 0), "h a")}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -216,7 +218,7 @@ export default function CalendarPage() {
                         <div
                           key={event.id}
                           onClick={(e) => handleEventClick(event, e)}
-                          className="absolute px-1 py-0.5 pointer-events-auto cursor-pointer group"
+                          className="absolute px-0.5 py-0.5 pointer-events-auto cursor-pointer group"
                           style={{
                             top: `${style.top}px`,
                             height: `${style.height}px`,
