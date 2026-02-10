@@ -1,5 +1,3 @@
-dotenv.config();
-
 import cliProgress from "cli-progress";
 import { Db } from "mongodb";
 import puppeteer from "puppeteer";
@@ -7,7 +5,6 @@ import { connectToDB } from "../services/connectToDB.js";
 import { insertDB } from "../services/insertDB.js";
 import { scrapeCurrentPage } from "./scrapeCurrentPage.js";
 import { rmpUpdate } from "./rmpUpdate.js";
-import dotenv from "dotenv";
 
 const SUBJECT_CODES: string[] = [
   "AIP ",
@@ -315,4 +312,3 @@ export async function startSearch(term: string) {
 
   return;
 }
-

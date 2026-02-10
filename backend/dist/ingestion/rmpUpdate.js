@@ -44,4 +44,3 @@ export async function rmpUpdate(curTerm) {
     rmpBar.stop(); // Close TUI
     return;
 }
-await rmpUpdate("spring quarter 2026");

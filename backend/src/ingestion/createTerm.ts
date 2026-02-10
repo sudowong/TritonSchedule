@@ -5,12 +5,18 @@ export async function createTerm(newTerm: string) {
   const db = await connectToDB();
   const terms = db.collection("terms");
 
-  const newInsertTerm: Term = {
-    Term: newTerm,
-    IsActive: true,
-  };
+  const exists = await terms.find({ Term: newTerm }).toArray();
 
-  await terms.insertOne(newInsertTerm);
+  if (exists.length <= 0) {
+
+    const newInsertTerm: Term = {
+      Term: newTerm,
+      IsActive: true,
+    };
+
+    await terms.insertOne(newInsertTerm);
+
+  }
 
   return;
 }

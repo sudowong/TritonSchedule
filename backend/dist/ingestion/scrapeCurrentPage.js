@@ -1,7 +1,5 @@
 import { connectToDB } from "../services/connectToDB.js";
 import { Db } from "mongodb";
-import dotenv from "dotenv";
-dotenv.config();
 export async function scrapeCurrentPage(subject, term, page) {
     const db = await connectToDB();
     const rows = await page.$$("tr");

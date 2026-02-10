@@ -17,7 +17,7 @@ import { markAllTermsInactive } from "./markAllTermsInactive.js";
 // - I need to figure out what i'm going to do with course data from 2 terms ago.
 // Because we want to keep up to 2 terms of data in the DB, so I need figure out the 
 // document folder situation.
-async function ingest() {
+export async function ingest() {
     const db = await connectToDB();
     const detectedTerm = await detectCurrentTerm(); // Determine new term
     const activeTerm = await getActiveTermFromDB(); // Determine term before
@@ -32,7 +32,10 @@ async function ingest() {
         await createTerm(detectedTerm);
         await startSearch(detectedTerm);
     }
+    else {
+        // updating course information
+        await startSearch(detectedTerm);
+    }
     await disconnectFromDB();
     return;
 }
-ingest();

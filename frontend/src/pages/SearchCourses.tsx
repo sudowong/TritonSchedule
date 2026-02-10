@@ -6,6 +6,23 @@ import { useCalendar } from "@/context/CalendarContext";
 import { Weekday } from "@/types/calendar";
 import { toast } from "sonner";
 
+const API_KEY = import.meta.env.VITE_API_KEY ?? import.meta.env.API_KEY ?? "";
+
+function createApiRequestInit(signal: AbortSignal): RequestInit {
+  const normalizedApiKey = API_KEY.trim();
+
+  if (!normalizedApiKey) {
+    return { signal };
+  }
+
+  return {
+    signal,
+    headers: {
+      Authorization: `Bearer ${normalizedApiKey}`,
+    },
+  };
+}
+
 export default function SearchCourses() {
   const SEARCH_RESULTS_CACHE_KEY = "searchCourseResultsCache";
   const EXPANDED_COURSES_KEY = "expandedSearchCourseIds";
@@ -90,7 +107,7 @@ export default function SearchCourses() {
 
     const loadActiveTerm = async () => {
       try {
-        const response = await fetch("/api/term", { signal: controller.signal });
+        const response = await fetch("/api/term", createApiRequestInit(controller.signal));
         if (!response.ok) {
           return;
         }
@@ -144,7 +161,6 @@ export default function SearchCourses() {
 
     const hasReusableCache =
       query.toLowerCase() === lastFetchedQuery.trim().toLowerCase() &&
-      searchState !== "error" &&
       (lastFetchedTerm.trim() === normalizedTerm ||
         lastFetchedTerm.trim().length === 0 ||
         normalizedTerm.length === 0);
@@ -195,7 +211,7 @@ export default function SearchCourses() {
     return () => {
       controller.abort();
     };
-  }, [debouncedSearchQuery, activeTerm, lastFetchedQuery, lastFetchedTerm, searchState]);
+  }, [debouncedSearchQuery, activeTerm, lastFetchedQuery, lastFetchedTerm]);
 
   const displayedCourses = coursesFromBackend;
   const isDebouncingSearch =
@@ -291,13 +307,13 @@ export default function SearchCourses() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] overflow-hidden flex justify-center px-6 pt-[10vh]">
-      <div className="w-full max-w-4xl">
+    <div className="min-h-[calc(100vh-4rem)] flex justify-center px-3 pb-6 pt-6 sm:px-5 sm:pt-10 lg:pt-[12vh]">
+      <div className="w-full max-w-5xl">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-primary/80">
             Course Explorer
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             Search Courses
           </h1>
           <p className="mt-3 text-sm text-muted-foreground sm:text-base">
@@ -305,15 +321,15 @@ export default function SearchCourses() {
           </p>
         </div>
 
-        <div className="mx-auto mt-6 max-w-3xl">
-          <div className="overflow-hidden rounded-[1.4rem] border border-border/80 bg-[linear-gradient(160deg,hsl(0_0%_100%_/_0.9),hsl(204_50%_96%_/_0.92))] shadow-[0_24px_50px_hsl(208_45%_58%_/_0.24)] backdrop-blur-xl">
-            <div className="flex items-center gap-3 border-b border-border/70 px-4 py-4 transition-all focus-within:border-primary/70 focus-within:bg-background/20 focus-within:shadow-[inset_0_-1px_0_hsl(var(--primary)/0.55),0_0_0_2px_hsl(var(--primary)/0.16)] sm:px-6">
-              <Search className="h-5 w-5 text-muted-foreground" />
+        <div className="mx-auto mt-5 max-w-5xl">
+          <div className="overflow-hidden rounded-[1.45rem] border border-border/80 bg-[linear-gradient(160deg,hsl(0_0%_100%_/_0.9),hsl(204_50%_96%_/_0.92))] shadow-[0_24px_50px_hsl(208_45%_58%_/_0.24)] backdrop-blur-xl">
+            <div className="flex items-center gap-3 border-b border-border/70 px-4 py-4 transition-all focus-within:border-primary/70 focus-within:bg-background/20 focus-within:shadow-[inset_0_-1px_0_hsl(var(--primary)/0.55),0_0_0_2px_hsl(var(--primary)/0.16)] sm:gap-4 sm:px-6 sm:py-5">
+              <Search className="h-5 w-5 text-muted-foreground sm:h-7 sm:w-7" />
               <Input
                 placeholder="Search courses by name, number, or instructor"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-auto min-h-[2.2rem] border-0 bg-transparent p-0 text-[1.05rem] leading-9 text-foreground caret-primary placeholder:text-muted-foreground/85 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[1.12rem]"
+                className="h-auto min-h-[2.4rem] border-0 bg-transparent p-0 text-[1.05rem] leading-[1.15] text-foreground caret-primary placeholder:text-[0.95rem] placeholder:text-muted-foreground/85 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:min-h-[3rem] sm:text-[1.3rem] sm:placeholder:text-[1.05rem] md:text-[1.42rem] md:placeholder:text-[1.18rem]"
               />
             </div>
 
@@ -369,13 +385,13 @@ export default function SearchCourses() {
                       {isBackendLoading ? "Loading..." : `${displayedCourses.length} result${displayedCourses.length === 1 ? "" : "s"}`}
                     </p>
                   </div>
-                  <div className="max-h-[min(58vh,520px)] space-y-1.5 overflow-y-auto pr-1">
+                  <div className="max-h-[min(56vh,520px)] space-y-1.5 overflow-y-auto pr-1 sm:max-h-[min(58vh,520px)]">
                     {displayedCourses.map((course) => (
                       <div
                         key={course.id}
                         className="rounded-xl border border-transparent px-3 py-2.5 transition-colors hover:border-border/60 hover:bg-accent/35"
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0 flex items-start gap-3">
                             <span className="rounded-md border border-border/65 bg-background/45 p-1.5">
                               <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -389,7 +405,7 @@ export default function SearchCourses() {
                             </div>
                           </div>
 
-                          <div className="w-[220px] shrink-0">
+                          <div className="w-full shrink-0 sm:w-[220px]">
                             <button
                               type="button"
                               disabled={addedCourseIds.has(course.id)}
@@ -424,7 +440,7 @@ export default function SearchCourses() {
                           <div className="mt-3 grid gap-2 rounded-lg border border-border/70 bg-background/35 p-3 text-xs text-muted-foreground sm:grid-cols-2">
                             <div>
                               <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">Rate My Professor</p>
-                              <div className="mt-1.5 h-24 space-y-1.5 rounded-md border border-border/60 bg-background/40 p-2">
+                              <div className="mt-1.5 h-28 space-y-1.5 rounded-md border border-border/60 bg-background/40 p-2 sm:h-24">
                                 <div className="flex items-center justify-between gap-2 text-xs">
                                   <span className="text-muted-foreground">Rating</span>
                                   <span className="font-medium text-foreground">
@@ -448,7 +464,7 @@ export default function SearchCourses() {
                             <div>
                               <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">Discussion Sections</p>
                               {course.discussionSections && course.discussionSections.length > 0 ? (
-                                <div className="mt-1.5 h-24 space-y-1.5 overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2">
+                                <div className="mt-1.5 h-28 space-y-1.5 overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2 sm:h-24">
                                   {course.discussionSections.map((section) => {
                                     const isSelected = getSelectedDiscussion(course)?.id === section.id;
                                     return (
@@ -639,7 +655,7 @@ async function searchBackendCourses(query: string, signal: AbortSignal, term: st
   const encodedTerm = encodeURIComponent(term || "");
   const endpoint = `/api/course?course=${encodedQuery}&term=${encodedTerm}`;
 
-  const response = await fetch(endpoint, { signal });
+  const response = await fetch(endpoint, createApiRequestInit(signal));
 
   if (response.status === 404 || response.status === 400) {
     return [];
@@ -670,7 +686,10 @@ async function hydrateCoursesWithRmp(courses: Course[], signal: AbortSignal): Pr
   const lookupEntries = await Promise.all(
     uniqueInstructors.map(async (instructor) => {
       try {
-        const response = await fetch(`/api/rmp?teacher=${encodeURIComponent(instructor)}`, { signal });
+        const response = await fetch(
+          `/api/rmp?teacher=${encodeURIComponent(instructor)}`,
+          createApiRequestInit(signal)
+        );
         if (response.status === 404 || response.status === 400) {
           return [instructor, null] as const;
         }

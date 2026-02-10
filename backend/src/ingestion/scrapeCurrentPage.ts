@@ -2,9 +2,6 @@ import type { Page } from "puppeteer";
 import type { Course } from "../models/Course.js";
 import { connectToDB } from "../services/connectToDB.js";
 import { Db } from "mongodb";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 export async function scrapeCurrentPage(subject: string, term: string, page: Page) {
 
@@ -72,7 +69,8 @@ export async function scrapeCurrentPage(subject: string, term: string, page: Pag
       if (
         nonTestBucket === "DI" ||
         nonTestBucket === "LE" ||
-        nonTestBucket == "SE"
+        nonTestBucket == "SE" ||
+        nonTestBucket == "LA"
       ) {
         if (current.Teacher.length <= 0) {
           current.Teacher = nestedRows[9];

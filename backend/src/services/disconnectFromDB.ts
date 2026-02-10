@@ -1,5 +1,12 @@
 import { client } from "../services/connectToDB.js";
 
 export async function disconnectFromDB() {
-  await client.close();
+
+  if (client) {
+    await client.close();
+    return;
+  }
+
+  return;
+
 }

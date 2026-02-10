@@ -1,15 +1,15 @@
 import { MongoClient, Db } from "mongodb";
-import dotenv from "dotenv";
 
-dotenv.config();
-export let client: MongoClient;
-let db: Db;
-
-const uri = process.env.MONGO_URI || "";
-const dbName = process.env.DB_NAME!;
+export let client: MongoClient | null = null;
+let db: Db | null = null;
+let connecting: Promise<Db> | null = null;
 
 export async function connectToDB() {
+
   if (db) return db;
+
+  const dbName = process.env.DB_NAME!;
+  const uri = process.env.MONGO_URI || "";
 
   client = new MongoClient(uri);
 

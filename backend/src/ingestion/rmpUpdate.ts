@@ -65,5 +65,3 @@ export async function rmpUpdate(curTerm: string) {
 
   return;
 }
-
-await rmpUpdate("spring quarter 2026");

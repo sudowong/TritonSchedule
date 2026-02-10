@@ -20,7 +20,7 @@ import { markAllTermsInactive } from "./markAllTermsInactive.js";
 // Because we want to keep up to 2 terms of data in the DB, so I need figure out the 
 // document folder situation.
 
-async function ingest() {
+export async function ingest() {
 
   const db: Db = await connectToDB();
 
@@ -36,6 +36,9 @@ async function ingest() {
     await markAllTermsInactive();
     await createTerm(detectedTerm);
     await startSearch(detectedTerm);
+  } else {
+    // updating course information
+    await startSearch(detectedTerm);
   }
 
   await disconnectFromDB();
@@ -43,5 +46,3 @@ async function ingest() {
   return;
 
 }
-
-ingest();
