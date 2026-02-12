@@ -7,6 +7,11 @@ import { Weekday } from "@/types/calendar";
 import { toast } from "sonner";
 
 const API_KEY = import.meta.env.VITE_API_KEY ?? import.meta.env.API_KEY ?? "";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/+$/, "");
+
+function buildApiUrl(path: string): string {
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 function createApiRequestInit(signal: AbortSignal): RequestInit {
   const normalizedApiKey = API_KEY.trim();
@@ -108,7 +113,7 @@ export default function SearchCourses() {
 
     const loadActiveTerm = async () => {
       try {
-        const response = await fetch("/api/term", createApiRequestInit(controller.signal));
+        const response = await fetch(buildApiUrl("/term"), createApiRequestInit(controller.signal));
         if (!response.ok) {
           return;
         }
@@ -772,7 +777,7 @@ function generateCalendarColor(): string {
 async function searchBackendCourses(query: string, signal: AbortSignal, term: string): Promise<BackendCourse[]> {
   const encodedQuery = encodeURIComponent(query);
   const encodedTerm = encodeURIComponent(term || "");
-  const endpoint = `/api/course?course=${encodedQuery}&term=${encodedTerm}`;
+  const endpoint = buildApiUrl(`/course?course=${encodedQuery}&term=${encodedTerm}`);
 
   const response = await fetch(endpoint, createApiRequestInit(signal));
 
@@ -806,7 +811,7 @@ async function hydrateCoursesWithRmp(courses: Course[], signal: AbortSignal): Pr
     uniqueInstructors.map(async (instructor) => {
       try {
         const response = await fetch(
-          `/api/rmp?teacher=${encodeURIComponent(instructor)}`,
+          buildApiUrl(`/rmp?teacher=${encodeURIComponent(instructor)}`),
           createApiRequestInit(signal)
         );
         if (response.status === 404 || response.status === 400) {
