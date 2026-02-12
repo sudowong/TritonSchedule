@@ -9,5 +9,4 @@ yarn.lock
 dist
 
 # Config
-package-lock.json
 .vercel
