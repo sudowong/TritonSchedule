@@ -230,7 +230,7 @@ export async function startSearch(term) {
             lastPage = pageParam ? parseInt(pageParam, 10) : null;
         }
         lastPage = lastPage != null ? lastPage + 1 : 0;
-        let currentPage = 0;
+        let currentPage = 1;
         while (currentPage < lastPage) {
             // Scrapes contents of current page
             let curPageContent = await scrapeCurrentPage(code, term, page);

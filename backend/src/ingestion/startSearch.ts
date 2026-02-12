@@ -253,7 +253,7 @@ export async function startSearch(term: string) {
 
     lastPage = lastPage != null ? lastPage + 1 : 0;
 
-    let currentPage = 0;
+    let currentPage = 1;
 
     while (currentPage < lastPage) {
       // Scrapes contents of current page

@@ -1,7 +1,4 @@
-import { connectToDB } from "../services/connectToDB.js";
-import { Db } from "mongodb";
 export async function scrapeCurrentPage(subject, term, page) {
-    const db = await connectToDB();
     const rows = await page.$$("tr");
     const results = [];
     let current = null;
@@ -16,7 +13,7 @@ export async function scrapeCurrentPage(subject, term, page) {
             combinedTitle = `${subject} ${courseNumber}: ${courseTitle}`;
         }
         if (combinedTitle.length > 0) {
-            if (current != null) {
+            if (current != null) { // To push to results when next item appears
                 results.push(current);
             }
             current = {
@@ -100,6 +97,11 @@ export async function scrapeCurrentPage(subject, term, page) {
                 };
             }
         }
+    }
+    // XXX: To push last item (bad code, should 
+    // figure out a way to account for this edge case in the for loop)
+    if (current != null) {
+        results.push(current);
     }
     return results;
 }

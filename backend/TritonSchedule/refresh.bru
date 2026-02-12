@@ -1,0 +1,20 @@
+meta {
+  name: /refresh
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:3000/refresh
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer s30NjCmiUgc6dMhH8711cYkOYi5ALfN0
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

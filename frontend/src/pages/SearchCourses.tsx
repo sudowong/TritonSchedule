@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Loader2, Search, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Course, DiscussionSection } from "@/data/sampleCourses";
+import { Course, CourseExamSection, DiscussionSection } from "@/data/sampleCourses";
 import { useCalendar } from "@/context/CalendarContext";
 import { Weekday } from "@/types/calendar";
 import { toast } from "sonner";
@@ -70,6 +70,7 @@ export default function SearchCourses() {
     }
   });
   const [selectedDiscussionIds, setSelectedDiscussionIds] = useState<Record<string, string>>({});
+  const [selectedLabIds, setSelectedLabIds] = useState<Record<string, string>>({});
   const [lastFetchedQuery, setLastFetchedQuery] = useState(() => {
     const stored = sessionStorage.getItem(SEARCH_RESULTS_CACHE_KEY);
     if (!stored) return "";
@@ -226,7 +227,11 @@ export default function SearchCourses() {
     );
   }, [events]);
 
-  const handleAddToCalendar = (course: Course, selectedDiscussion?: DiscussionSection) => {
+  const handleAddToCalendar = (
+    course: Course,
+    selectedDiscussion?: DiscussionSection,
+    selectedLab?: DiscussionSection
+  ) => {
     const calendarColor = generateCalendarColor();
     const lectureSchedule = parseCourseSchedule(course.schedule);
     const startTime = lectureSchedule?.startTime ?? "09:00";
@@ -266,13 +271,35 @@ export default function SearchCourses() {
       }
     }
 
-    if (uniqueDays.length === 0 && !selectedDiscussion) {
+    if (selectedLab) {
+      const labSchedule = parseCourseSchedule(selectedLab.time);
+      if (labSchedule) {
+        labSchedule.days.forEach((labDay) => {
+          addEvent({
+            id: `${course.id}-${selectedLab.id}-${labDay}`,
+            title: `${course.name} (${selectedLab.name})`,
+            dayOfWeek: labDay,
+            startTime: labSchedule.startTime,
+            endTime: labSchedule.endTime,
+            color: calendarColor,
+            isCourse: true,
+            courseId: course.id,
+            eventType: "Lab",
+          });
+        });
+      }
+    }
+
+    if (uniqueDays.length === 0 && !selectedDiscussion && !selectedLab) {
       toast.error("Could not parse this course schedule for calendar placement.");
       return;
     }
 
-    const discussionInfo = selectedDiscussion ? ` with ${selectedDiscussion.name}` : "";
-    toast.success(`${course.name}${discussionInfo} added to your calendar!`);
+    const selectedSections = [selectedDiscussion?.name, selectedLab?.name].filter(
+      (name): name is string => Boolean(name)
+    );
+    const sectionInfo = selectedSections.length > 0 ? ` (${selectedSections.join(", ")})` : "";
+    toast.success(`${course.name}${sectionInfo} added to your calendar!`);
   };
 
   const toggleExpandedCourse = (courseId: string) => {
@@ -303,6 +330,25 @@ export default function SearchCourses() {
     setSelectedDiscussionIds((previous) => ({
       ...previous,
       [courseId]: discussionId,
+    }));
+  };
+
+  const getSelectedLab = (course: Course): DiscussionSection | undefined => {
+    const selectedId = selectedLabIds[course.id];
+    if (!selectedId) {
+      return course.labSections?.[0];
+    }
+
+    return (
+      course.labSections?.find((section) => section.id === selectedId) ??
+      course.labSections?.[0]
+    );
+  };
+
+  const setSelectedLabForCourse = (courseId: string, labId: string) => {
+    setSelectedLabIds((previous) => ({
+      ...previous,
+      [courseId]: labId,
     }));
   };
 
@@ -406,12 +452,18 @@ export default function SearchCourses() {
                           </div>
 
                           <div className="w-full shrink-0 sm:w-[220px]">
-                            <button
-                              type="button"
-                              disabled={addedCourseIds.has(course.id)}
-                              onClick={() => handleAddToCalendar(course, getSelectedDiscussion(course))}
-                              className="w-full rounded-md border border-border/70 bg-background/45 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-55"
-                            >
+                              <button
+                                type="button"
+                                disabled={addedCourseIds.has(course.id)}
+                                onClick={() =>
+                                  handleAddToCalendar(
+                                    course,
+                                    getSelectedDiscussion(course),
+                                    getSelectedLab(course)
+                                  )
+                                }
+                                className="w-full rounded-md border border-border/70 bg-background/45 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-55"
+                              >
                               {addedCourseIds.has(course.id) ? "Added" : "Add"}
                             </button>
 
@@ -479,15 +531,82 @@ export default function SearchCourses() {
                                         }`}
                                       >
                                         <p className="truncate font-medium">{section.name}</p>
-                                        <p className="truncate text-[11px] opacity-90">
-                                          {section.time} • {section.location}
-                                        </p>
+                                        <p className="truncate text-[11px] opacity-90">{formatSectionDetail(section)}</p>
                                       </button>
                                     );
                                   })}
                                 </div>
                               ) : (
-                                <p className="mt-1 text-xs text-foreground">Unavailable</p>
+                                <div className="mt-1.5 flex h-28 items-center justify-center rounded-md border border-border/60 bg-background/40 p-2 text-center text-xs text-foreground sm:h-24">
+                                  None available
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">Midterm</p>
+                              {course.midtermSections && course.midtermSections.length > 0 ? (
+                                <div className="mt-1.5 h-28 overflow-hidden rounded-md border border-border/60 bg-background/40 p-2 sm:h-24">
+                                  <div className="divide-y divide-border/60">
+                                  {course.midtermSections.map((midterm) => (
+                                    <div
+                                      key={midterm.id}
+                                      className="py-1 text-xs text-muted-foreground first:pt-0 last:pb-0"
+                                    >
+                                      <p className="truncate font-medium text-foreground">{midterm.name}</p>
+                                      <p className="truncate text-[11px] opacity-90">{formatSectionDetail(midterm)}</p>
+                                    </div>
+                                  ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-1.5 flex h-28 items-center justify-center rounded-md border border-border/60 bg-background/40 p-2 text-center text-xs text-foreground sm:h-24">
+                                  None scheduled
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">Labs</p>
+                              {course.labSections && course.labSections.length > 0 ? (
+                                <div className="mt-1.5 h-28 space-y-1.5 overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2 sm:h-24">
+                                  {course.labSections.map((section) => {
+                                    const isSelected = getSelectedLab(course)?.id === section.id;
+                                    return (
+                                      <button
+                                        key={section.id}
+                                        type="button"
+                                        onClick={() => setSelectedLabForCourse(course.id, section.id)}
+                                        className={`w-full rounded-md border px-2 py-1.5 text-left text-xs transition-colors ${
+                                          isSelected
+                                            ? "border-primary/45 bg-primary/10 text-foreground"
+                                            : "border-border/60 bg-background/50 text-muted-foreground hover:bg-accent/45"
+                                        }`}
+                                      >
+                                        <p className="truncate font-medium">{section.name}</p>
+                                        <p className="truncate text-[11px] opacity-90">{formatSectionDetail(section)}</p>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="mt-1.5 flex h-28 items-center justify-center rounded-md border border-border/60 bg-background/40 p-2 text-center text-xs text-foreground sm:h-24">
+                                  None available
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">Final</p>
+                              {course.finalSection ? (
+                                <div className="mt-1.5 rounded-md border border-border/60 bg-background/40 p-2 text-xs text-muted-foreground">
+                                  <p className="font-medium text-foreground">{course.finalSection.name}</p>
+                                  <p className="mt-0.5 text-[11px] opacity-90">{formatSectionDetail(course.finalSection)}</p>
+                                </div>
+                              ) : (
+                                <div className="mt-1.5 flex h-28 items-center justify-center rounded-md border border-border/60 bg-background/40 p-2 text-center text-xs text-foreground sm:h-24">
+                                  None scheduled
+                                </div>
                               )}
                             </div>
                           </div>
@@ -750,6 +869,12 @@ type BackendCourse = {
   lecture?: BackendSection | BackendSection[] | null;
   Discussions?: BackendSection[];
   discussions?: BackendSection[];
+  Labs?: BackendSection[];
+  labs?: BackendSection[];
+  Midterms?: BackendSection[];
+  midterms?: BackendSection[];
+  Final?: BackendSection | null;
+  final?: BackendSection | null;
 };
 
 type BackendResponse = BackendCourse[] | { data?: BackendCourse[] };
@@ -769,6 +894,9 @@ function mapBackendCourseToCourse(course: BackendCourse, index: number): Course 
     ? course.lecture[0]
     : (course.Lecture ?? course.lecture ?? null);
   const discussions = course.Discussions ?? course.discussions ?? [];
+  const labs = course.Labs ?? course.labs ?? [];
+  const midterms = course.Midterms ?? course.midterms ?? [];
+  const finalExam = course.Final ?? course.final ?? null;
   const lectureDays = lecture?.Days?.trim() ?? "";
   const lectureTime = lecture?.Time?.trim() ?? "";
   const lectureSchedule = `${lectureDays} ${lectureTime}`.trim();
@@ -789,7 +917,42 @@ function mapBackendCourseToCourse(course: BackendCourse, index: number): Course 
       id: `${index}-${sectionIndex}`,
       name: `Discussion ${sectionIndex + 1}`,
       time: `${section.Days ?? ""} ${section.Time ?? ""}`.trim() || "TBA",
-      location: section.Location ?? "TBA",
+      location: section.Location?.trim() || "TBA",
     })),
+    labSections: labs.map((section, sectionIndex) => ({
+      id: `${index}-lab-${sectionIndex}`,
+      name: `Lab ${sectionIndex + 1}`,
+      time: `${section.Days ?? ""} ${section.Time ?? ""}`.trim() || "TBA",
+      location: section.Location?.trim() || "TBA",
+    })),
+    midtermSections: midterms
+      .filter((midterm) => {
+        const days = midterm.Days?.trim() ?? "";
+        const time = midterm.Time?.trim() ?? "";
+        const location = midterm.Location?.trim() ?? "";
+        return days.length > 0 || time.length > 0 || location.length > 0;
+      })
+      .map((midterm, midtermIndex): CourseExamSection => ({
+        id: `${index}-midterm-${midtermIndex}`,
+        name: `Midterm ${midtermIndex + 1}`,
+        time: `${midterm.Days ?? ""} ${midterm.Time ?? ""}`.trim() || "TBA",
+        location: midterm.Location?.trim() || "TBA",
+      })),
+    finalSection:
+      finalExam &&
+      ((finalExam.Days?.trim() ?? "").length > 0 ||
+        (finalExam.Time?.trim() ?? "").length > 0 ||
+        (finalExam.Location?.trim() ?? "").length > 0)
+        ? {
+            id: `${index}-final`,
+            name: "Final Exam",
+            time: `${finalExam.Days ?? ""} ${finalExam.Time ?? ""}`.trim() || "TBA",
+            location: finalExam.Location?.trim() || "TBA",
+          }
+        : null,
   };
+}
+
+function formatSectionDetail(section: { time: string; location: string }): string {
+  return `${section.time} • ${section.location}`;
 }
