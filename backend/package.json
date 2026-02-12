@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "node --env-file=.env dist/server.js",
     "start:server": "node --env-file=.env dist/server.js"
   },
   "keywords": [],

@@ -1,8 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
   "crons": [
     {
-      "path": "/refresh",
+      "path": "/api/refresh",
       "schedule": "0 3 * * *"
     }
   ]
