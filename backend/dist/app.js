@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import express from "express";
 import cors from "cors";
+import express from "express";
 import courseRouter from "./routes/courseRouter.js";
 import rmpRouter from "./routes/rmpRouter.js";
 import refreshRouter from "./routes/refreshRouter.js";
@@ -8,14 +8,31 @@ import termRouter from "./routes/termRouter.js";
 import { requireApiSecret } from "./middleware/requireApiSecret.js";
 dotenv.config();
 const app = express();
-const corsOrigin = process.env.CORS_ORIGIN?.trim();
-app.use(cors({
-    origin: corsOrigin && corsOrigin.length > 0 ? corsOrigin : true,
-}));
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Authorization", "Content-Type"],
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(requireApiSecret);
-app.use("/api/course", courseRouter);
-app.use("/api/rmp", rmpRouter);
-app.use("/api/refresh", refreshRouter);
-app.use("/api/term", termRouter);
+app.use("/course", courseRouter);
+app.use("/rmp", rmpRouter);
+app.use("/refresh", refreshRouter);
+app.use("/term", termRouter);
 export default app;
