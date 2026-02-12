@@ -25,7 +25,7 @@
   "dependencies": {
     "@types/cli-progress": "^3.11.6",
     "@types/puppeteer": "^5.4.7",
-    "cheerio": "^1.1.2",
+    "cheerio": "1.0.0-rc.12",
     "cli-progress": "^3.12.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
