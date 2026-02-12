@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-  "https://triton-schedule-alpha.vercel.app",
+  "https://tritonschedule.com",
   "http://localhost:8080",
 ];
 
