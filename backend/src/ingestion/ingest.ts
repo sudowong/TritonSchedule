@@ -1,6 +1,5 @@
 import { connectToDB } from "../services/connectToDB.js";
 import { Db } from "mongodb";
-import { disconnectFromDB } from "../services/disconnectFromDB.js";
 import { detectCurrentTerm } from "./detectCurrentTerm.js";
 import { getActiveTermFromDB } from "./getActiveTermFromDB.js";
 import { createTerm } from "./createTerm.js";
@@ -40,8 +39,6 @@ export async function ingest() {
     // updating course information
     await startSearch(detectedTerm);
   }
-
-  await disconnectFromDB();
 
   return;
 
