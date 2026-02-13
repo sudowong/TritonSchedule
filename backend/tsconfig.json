@@ -6,7 +6,7 @@
       "node"
     ],
     "module": "nodenext",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "lib": [
       "ESNext",
@@ -19,6 +19,7 @@
     "moduleDetection": "force"
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "api/**/*.ts"
   ]
 }

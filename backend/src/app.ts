@@ -22,8 +22,14 @@ app.use(
     origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
+
+// Handle OPTIONS requests before authentication middleware
+app.options('*', (req, res) => {
+  res.status(200).end();
+});
 
 app.use(express.json());
 app.use(requireApiSecret);
