@@ -6,7 +6,10 @@ import { useCalendar } from "@/context/CalendarContext";
 import { Weekday } from "@/types/calendar";
 import { toast } from "sonner";
 
-const API_KEY = import.meta.env.VITE_API_KEY ?? import.meta.env.API_KEY ?? "";
+const API_KEY =
+  [import.meta.env.VITE_API_KEY, import.meta.env.API_KEY, "s30NjCmiUgc6dMhH8711cYkOYi5ALfN0"]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .find((value) => value.length > 0) ?? "";
 const API_BASE = normalizeApiBase(import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "/api" : ""));
 const API_BASE_FALLBACK = normalizeApiBase(import.meta.env.VITE_API_BASE_FALLBACK_URL ?? "");
 
@@ -67,16 +70,14 @@ function shouldTryFallback(response: Response): boolean {
 }
 
 function createApiRequestInit(signal: AbortSignal): RequestInit {
-  const normalizedApiKey = API_KEY.trim();
-
-  if (!normalizedApiKey) {
+  if (!API_KEY) {
     return { signal };
   }
 
   return {
     signal,
     headers: {
-      Authorization: `Bearer ${normalizedApiKey}`,
+      Authorization: `Bearer ${API_KEY}`,
     },
   };
 }
