@@ -864,28 +864,8 @@ async function hydrateCoursesWithRmp(courses: Course[], signal: AbortSignal): Pr
 
   const lookupEntries = await Promise.all(
     uniqueInstructors.map(async (instructor) => {
-      try {
-        const response = await fetchApi(
-          `/rmp?teacher=${encodeURIComponent(instructor)}`,
-          createApiRequestInit(signal)
-        );
-        if (response.status === 404 || response.status === 400) {
-          return [instructor, null] as const;
-        }
-
-        if (!response.ok) {
-          return [instructor, null] as const;
-        }
-
-        const payload = (await response.json()) as BackendRmpResponse;
-        const stats = Array.isArray(payload.Data) ? payload.Data[0] : undefined;
-        return [instructor, stats ?? null] as const;
-      } catch (error) {
-        if ((error as Error).name === "AbortError") {
-          throw error;
-        }
-        return [instructor, null] as const;
-      }
+      const stats = await fetchRmpForInstructor(instructor, signal);
+      return [instructor, stats] as const;
     })
   );
 
@@ -908,6 +888,65 @@ async function hydrateCoursesWithRmp(courses: Course[], signal: AbortSignal): Pr
       rmpTakeAgain: Number.isFinite(takeAgain) && takeAgain >= 0 ? takeAgain : undefined,
     };
   });
+}
+
+function normalizeInstructorName(instructor: string): string {
+  return instructor
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildRmpTeacherQueryCandidates(instructor: string): string[] {
+  const normalized = normalizeInstructorName(instructor);
+  if (normalized.length === 0) {
+    return [];
+  }
+
+  const candidates = [normalized];
+  const tokens = normalized.split(" ").filter((token) => token.length > 0);
+  if (tokens.length > 1) {
+    candidates.push(tokens.slice().reverse().join(" "));
+  }
+
+  return Array.from(new Set(candidates.map((candidate) => candidate.toLowerCase())));
+}
+
+async function fetchRmpForInstructor(
+  instructor: string,
+  signal: AbortSignal
+): Promise<BackendRmpRecord | null> {
+  const candidates = buildRmpTeacherQueryCandidates(instructor);
+
+  for (const candidate of candidates) {
+    try {
+      const response = await fetchApi(
+        `/rmp?teacher=${encodeURIComponent(candidate)}`,
+        createApiRequestInit(signal)
+      );
+
+      if (response.status === 404 || response.status === 400) {
+        continue;
+      }
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const payload = (await response.json()) as BackendRmpResponse;
+      const stats = Array.isArray(payload.Data) ? payload.Data[0] : undefined;
+      if (stats) {
+        return stats;
+      }
+    } catch (error) {
+      if ((error as Error).name === "AbortError") {
+        throw error;
+      }
+      return null;
+    }
+  }
+
+  return null;
 }
 
 type BackendSection = {
