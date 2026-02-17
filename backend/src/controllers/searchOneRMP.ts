@@ -1,6 +1,7 @@
 import { connectToDB } from "../services/connectToDB.js";
+import { normalizeTeacherKey } from "../utils/normalizeTeacherKey.js";
 
-export async function searchForRMP(req: any, res: any) {
+export async function searchOneRMP(req: any, res: any) {
 
   const db = await connectToDB();
 
@@ -13,14 +14,10 @@ export async function searchForRMP(req: any, res: any) {
 
   const teacher = typeof queryParams.teacher === "string" ? queryParams.teacher.trim() : "";
 
-  const normalizedTeacher = teacher
-    .replace(/\s+/g, " ")
-    .replace(/[^\w\s]/g, "")
-    .trim()
-    .toLowerCase();
+  const normalized = normalizeTeacherKey(teacher);
 
   const data = await db.collection("rmpData").find({
-    nameKey: normalizedTeacher,
+    nameKey: normalized,
   }).toArray();
 
   if (data.length <= 0) {

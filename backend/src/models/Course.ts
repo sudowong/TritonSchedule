@@ -1,4 +1,5 @@
 import type { Section } from "./Section.js";
+import type { RMP } from "../models/RMP.js";
 
 export type Course = {
   Name: string;
@@ -9,4 +10,6 @@ export type Course = {
   Discussions: Section[];
   Midterms: Section[];
   Final: Section | null;
+  nameKey: string;
+  rmp: RMP | null;
 };

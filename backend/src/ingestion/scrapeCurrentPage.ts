@@ -1,5 +1,6 @@
 import type { Page } from "puppeteer";
 import type { Course } from "../models/Course.js";
+import { normalizeTeacherKey } from "../utils/normalizeTeacherKey.js";
 
 export async function scrapeCurrentPage(subject: string, term: string, page: Page) {
 
@@ -41,6 +42,8 @@ export async function scrapeCurrentPage(subject: string, term: string, page: Pag
         Discussions: [],
         Midterms: [],
         Final: null,
+        nameKey: "",
+        rmp: null,
       };
       continue;
     }
@@ -72,6 +75,7 @@ export async function scrapeCurrentPage(subject: string, term: string, page: Pag
       ) {
         if (current.Teacher.length <= 0) {
           current.Teacher = nestedRows[9];
+          current.nameKey = normalizeTeacherKey(nestedRows[9]);
         }
 
         // Lecture bucket
@@ -120,6 +124,7 @@ export async function scrapeCurrentPage(subject: string, term: string, page: Pag
       } else if (nonTestBucket === "IT") {
         if (current.Teacher.length <= 0) {
           current.Teacher = nestedRows[9];
+          current.nameKey = normalizeTeacherKey(nestedRows[9]);
         }
 
         current.Lecture = {

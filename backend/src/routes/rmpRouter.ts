@@ -1,8 +1,10 @@
 import express from "express";
-import { searchForRMP } from "../controllers/searchForRMP.js";
+import { searchOneRMP } from "../controllers/searchOneRMP.js";
 
 const router = express.Router();
 
-router.get("/", searchForRMP);
+router.get("/", searchOneRMP); // For single professor queries 
+
+// router.get("/batch", searchBatchRMP);
 
 export default router

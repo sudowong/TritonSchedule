@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import cliProgress from "cli-progress";
 import { connectToDB } from "../services/connectToDB.js";
 import { Db } from "mongodb";
@@ -6,6 +7,8 @@ import {
   searchSchool,
   getProfessorRatingAtSchoolId,
 } from "ratemyprofessor-api";
+import type { RMP } from "../models/RMP.js";
+import { normalizeTeacherKey } from "../utils/normalizeTeacherKey.js";
 
 const schoolName = "University of California San Diego";
 
@@ -19,12 +22,11 @@ export async function rmpUpdate(curTerm: string) {
 
   // Add items to searched set 
   for (const doc of docs) {
-    const cleanTeacher = doc.Teacher.replace(/\s+/g, " ")
-      .replace(/[^\w\s]/g, "")
-    // .trim();
 
-    if (cleanTeacher.length > 0 && !searched.has(cleanTeacher)) {
-      searched.add(cleanTeacher);
+    const normalized = normalizeTeacherKey(doc.Teacher);
+
+    if (normalized.length > 0 && !searched.has(normalized)) {
+      searched.add(normalized);
     }
   }
 
@@ -47,7 +49,7 @@ export async function rmpUpdate(curTerm: string) {
     if (school !== undefined) {
       const schoolId = school[0].node.id;
       const search = await getProfessorRatingAtSchoolId(teacher, schoolId);
-      const item = {
+      const item: RMP = {
         avgRating: search.avgRating,
         avgDiff: search.avgDifficulty,
         takeAgainPercent: Math.trunc(search.wouldTakeAgainPercent),
@@ -55,7 +57,12 @@ export async function rmpUpdate(curTerm: string) {
         nameKey: teacher.toLowerCase(),
       };
 
-      await insertDB(db, [item], "rmpData");
+      // Match course with RMP data
+      await db.collection("courses").updateOne(
+        { nameKey: teacher },
+        { $set: { rmp: item } }
+      )
+
     }
 
     rmpBar.increment();
