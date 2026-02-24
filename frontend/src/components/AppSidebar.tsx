@@ -1,4 +1,4 @@
-import { Calendar, Search } from "lucide-react";
+import { Calendar, Search, UserRound } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { TridentIcon } from "@/components/icons/TridentIcon";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { title: "Search Courses", url: "/", icon: Search },
   { title: "Calendar", url: "/calendar", icon: Calendar },
+  { title: "Account", url: "/account", icon: UserRound },
 ];
 
 export function AppSidebar() {
@@ -24,7 +25,10 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <nav className="grid w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto">
+        <nav
+          className="grid w-full items-center gap-2 sm:flex sm:w-auto"
+          style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
+        >
           {navItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (

@@ -1,23 +1,48 @@
 import type { Request, Response } from "express";
 import * as userServices from "../services/userServices.js";
+import jwt from "jsonwebtoken";
 
 export const loginOne = async (req: Request, res: Response) => {
+
   try {
+
     const foundUser = await userServices.login(req.body);
-    res.status(200).send(foundUser);
+
+    if (!foundUser) {
+      return res.status(500).send({ Message: "User not found" });
+    }
+
+    const secret = process.env.JWT_SECRET!;
+    const token = jwt.sign(
+      { name: foundUser.name },
+      secret,
+      { expiresIn: "7d" },
+    );
+
+    res.status(200).send({ token, user: { name: foundUser.name } });
+
   } catch (error) {
+
     const message = error instanceof Error ? error.message : "Unexpected error";
+
     console.error("loginOne failed:", message);
+
     return res.status(500).send({ message });
+
   }
 };
 
 export const registerOne = async (req: Request, res: Response) => {
+
   try {
+
     await userServices.register(req.body);
     res.status(200).send("Account Registered");
+
   } catch (error) {
+
     const message = error instanceof Error ? error.message : "Unexpected error";
+
     console.error("registerOne failed:", message);
 
     if (message === "User already exists") {
@@ -26,4 +51,5 @@ export const registerOne = async (req: Request, res: Response) => {
 
     return res.status(500).send({ message });
   }
+
 };

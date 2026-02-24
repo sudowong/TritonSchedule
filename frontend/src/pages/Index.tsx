@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { CalendarProvider } from "@/context/CalendarContext";
 import SearchCourses from "./SearchCourses";
 import CalendarPage from "./CalendarPage";
+import AccountPage from "./AccountPage";
 
 const Index = () => {
   const location = useLocation();
@@ -16,6 +17,7 @@ const Index = () => {
             <Routes>
               <Route path="/" element={<SearchCourses />} />
               <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/account" element={<AccountPage />} />
             </Routes>
           </div>
         </main>

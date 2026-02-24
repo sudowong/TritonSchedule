@@ -2,11 +2,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 import express from "express";
 import courseRouter from "./routes/courseRouter.js";
-import rmpRouter from "./routes/rmpRouter.js";
 import refreshRouter from "./routes/refreshRouter.js";
 import termRouter from "./routes/termRouter.js";
 import { requireApiSecret } from "./middleware/requireApiSecret.js";
 import userRouter from "./routes/userRouter.js";
+import { requireUser } from "./middleware/requireUser.js";
 
 // Only load .env file in development (Vercel uses environment variables configured in dashboard)
 if (process.env.NODE_ENV !== "production") {
@@ -31,12 +31,16 @@ app.use(
 );
 
 app.use(express.json());
-app.use(requireApiSecret);
 
-app.use("/course", courseRouter);
-app.use("/rmp", rmpRouter);
-app.use("/refresh", refreshRouter);
-app.use("/term", termRouter);
+// Public Endpoints
 app.use("/auth", userRouter);
+
+// User Endpoints
+// TODO: Add future user endpoints here
+
+// API Endpoints
+app.use("/course", requireApiSecret, courseRouter);
+app.use("/refresh", requireApiSecret, refreshRouter);
+app.use("/term", requireApiSecret, termRouter);
 
 export default app;
